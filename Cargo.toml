@@ -11,48 +11,43 @@ members = [
     "crates/test-harness/differential",
     "crates/test-harness/report",
 ]
-# xtask is deliberately NOT a member — see note below. It has its own
-# nested [workspace] so its dependency graph never touches this lockfile.
+# xtask is a separate workspace to decouple the testing
 exclude = ["xtask"]
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.97.1"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/yourorg/qpp-rng"
-publish = false          # flip on a per-crate basis once something is ready to ship
+publish = false # flip on a per-crate basis once something is ready to ship
 
-# ---------------------------------------------------------------------
 # Centralized dependency versions. Member crates opt in with
-# `dep = { workspace = true }` so every crate stays on the same version
+# dep = { workspace = true } so every crate stays on the same version
 # without repeating it everywhere.
-# ---------------------------------------------------------------------
 [workspace.dependencies]
-rand_core   = { version = "0.6", default-features = false }
-heapless    = "0.8"
-proptest    = "1"
-criterion   = "0.5"
-anyhow      = "1"
-serde       = { version = "1", features = ["derive"] }
-serde_json  = "1"
+rand_core = { version = "0.10.1", default-features = false }
+heapless = "0.9.3"
+proptest = "1"
+criterion = "0.8.2"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 # Internal crates, referenced by path so other members can depend on
-# them as `qpp-rng-reference = { workspace = true }`.
-rng-core           = { path = "crates/rng-core" }
-entropy-timer      = { path = "crates/entropy-timer" }
-qpp-rng-reference  = { path = "crates/qpp-rng-reference" }
-qpp-rng-iot        = { path = "crates/qpp-rng-iot" }
+# them as qpp-rng-reference = { workspace = true }.
+rng-core = { path = "crates/rng-core" }
+entropy-timer = { path = "crates/entropy-timer" }
+qpp-rng-reference = { path = "crates/qpp-rng-reference" }
+qpp-rng-iot = { path = "crates/qpp-rng-iot" }
 
-# ---------------------------------------------------------------------
 # Profiles
-# ---------------------------------------------------------------------
 [profile.release]
 lto = true
 codegen-units = 1
 panic = "abort"
 
-# The IoT-optimized variants are judged partly on flash footprint —
+# The IoT-optimized variants are judged partly on flash footprint
 # override just that package rather than penalizing the reference impl
 # and host-side tooling with a size-first build everywhere.
 [profile.release.package.qpp-rng-iot]
