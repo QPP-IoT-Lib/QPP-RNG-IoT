@@ -13,8 +13,9 @@ unsafe extern "C" {
 pub struct MacosArmTimer;
 
 impl HighResTimer for MacosArmTimer {
-    fn init(&mut self) {
+    fn init(&mut self) -> u8 {
         // mach_absolute_time() needs no setup.
+        42 // ns is the native timer resolution on MacOS
     }
 
     fn tick(&mut self) -> u64 {

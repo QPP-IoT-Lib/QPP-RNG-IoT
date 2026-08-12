@@ -13,8 +13,8 @@ unsafe extern "C" {
 pub struct WindowsTimer;
 
 impl HighResTimer for WindowsTimer {
-    fn init(&mut self) {
-        // QueryPerformanceCounter needs no setup.
+    fn init(&mut self) -> u8 {
+        100 // ns is the native timer resolution on Windows
     }
 
     fn tick(&mut self) -> u64 {

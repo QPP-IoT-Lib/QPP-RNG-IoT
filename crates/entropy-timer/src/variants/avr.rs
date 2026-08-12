@@ -17,11 +17,12 @@ unsafe extern "C" {
 pub struct AvrTimer;
 
 impl HighResTimer for AvrTimer {
-    fn init(&mut self) {
+    fn init(&mut self) -> u8 {
         // SAFETY: `qpp_timer_init` takes no arguments; it configures
         // Timer1 and enables its overflow interrupt, which is safe to
         // do at any point before interrupts are relied upon elsewhere.
         unsafe { qpp_timer_init() }
+        66 // ns is the native timer resolution on Arduino, Timer1
     }
 
     fn tick(&mut self) -> u64 {

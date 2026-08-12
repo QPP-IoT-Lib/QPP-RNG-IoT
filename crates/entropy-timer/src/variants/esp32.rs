@@ -13,8 +13,9 @@ unsafe extern "C" {
 pub struct Esp32Timer;
 
 impl HighResTimer for Esp32Timer {
-    fn init(&mut self) {
+    fn init(&mut self) -> u8 {
         // CCOUNT free-runs from reset; nothing to configure.
+        5 // ns is the native timer resolution on ESP32 systems
     }
 
     fn tick(&mut self) -> u64 {

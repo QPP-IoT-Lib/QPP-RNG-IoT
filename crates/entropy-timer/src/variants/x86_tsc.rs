@@ -15,8 +15,9 @@ unsafe extern "C" {
 pub struct X86TscTimer;
 
 impl HighResTimer for X86TscTimer {
-    fn init(&mut self) {
+    fn init(&mut self) -> u8 {
         // The invariant-TSC CPUID check runs lazily, on first `tick()`.
+        1 // ns is the native timer resolution on Windows
     }
 
     fn tick(&mut self) -> u64 {

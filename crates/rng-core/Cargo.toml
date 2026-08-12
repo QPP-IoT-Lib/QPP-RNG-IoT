@@ -8,3 +8,4 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+rand_core = { workspace = true } # use the ws dependency

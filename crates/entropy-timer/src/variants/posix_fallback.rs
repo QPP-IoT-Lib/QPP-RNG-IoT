@@ -14,8 +14,9 @@ unsafe extern "C" {
 pub struct PosixFallbackTimer;
 
 impl HighResTimer for PosixFallbackTimer {
-    fn init(&mut self) {
+    fn init(&mut self) -> u8 {
         // clock_gettime(CLOCK_MONOTONIC) needs no setup.
+        1 // ns is the native timer resolution on Windows
     }
 
     fn tick(&mut self) -> u64 {

@@ -91,7 +91,8 @@ pub trait HighResTimer {
     /// One-time hardware setup. No-op on platforms where the counter is
     /// already free-running from reset/boot (host OSes, ESP32);
     /// required on AVR, which has to configure Timer1 first.
-    fn init(&mut self);
+    /// Returns the k value for timer normalization across platforms
+    fn init(&mut self) -> u8;
 
     /// Cheapest possible read of the underlying hardware counter.
     fn tick(&mut self) -> u64;
