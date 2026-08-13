@@ -8,3 +8,6 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+rand_core = { workspace = true }
+entropy-timer = { workspace = true }
+rng-core = { workspace = true }

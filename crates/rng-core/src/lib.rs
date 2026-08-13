@@ -1,3 +1,7 @@
+//! Corte traits of the QPP-RNG engine.
+//! Implements the RNG trait (TryRNG with Error=Infallible) of the rand_core lib.
+//! Standardizes all QPP-RNG implementations throughout the library.
+
 #![no_std] // No standard library for compatibility with no_std, bare metal microcontrollers.
 
 use rand_core::Rng;

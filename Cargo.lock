@@ -44,6 +44,11 @@ version = "0.1.0"
 [[package]]
 name = "qpp-rng-reference"
 version = "0.1.0"
+dependencies = [
+ "entropy-timer",
+ "rand_core",
+ "rng-core",
+]
 
 [[package]]
 name = "rand_core"
