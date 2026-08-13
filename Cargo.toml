@@ -11,54 +11,93 @@ members = [
     "crates/test-harness/differential",
     "crates/test-harness/report",
 ]
-# xtask is deliberately NOT a member — see note below. It has its own
-# nested [workspace] so its dependency graph never touches this lockfile.
+# xtask is a separate workspace to decouple the testing
 exclude = ["xtask"]
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.97.1"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/yourorg/qpp-rng"
-publish = false          # flip on a per-crate basis once something is ready to ship
+publish = false # flip on a per-crate basis once something is ready to ship
 
-# ---------------------------------------------------------------------
 # Centralized dependency versions. Member crates opt in with
-# `dep = { workspace = true }` so every crate stays on the same version
+# dep = { workspace = true } so every crate stays on the same version
 # without repeating it everywhere.
-# ---------------------------------------------------------------------
 [workspace.dependencies]
-rand_core   = { version = "0.6", default-features = false }
-heapless    = "0.8"
-proptest    = "1"
-criterion   = "0.5"
-anyhow      = "1"
-serde       = { version = "1", features = ["derive"] }
-serde_json  = "1"
+rand_core = { version = "0.10.1", default-features = false }
+heapless = "0.9.3"
+proptest = "1"
+criterion = "0.8.2"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 # Internal crates, referenced by path so other members can depend on
-# them as `qpp-rng-reference = { workspace = true }`.
-rng-core           = { path = "crates/rng-core" }
-entropy-timer      = { path = "crates/entropy-timer" }
-qpp-rng-reference  = { path = "crates/qpp-rng-reference" }
-qpp-rng-iot        = { path = "crates/qpp-rng-iot" }
+# them as qpp-rng-reference = { workspace = true }.
+rng-core = { path = "crates/rng-core" }
+entropy-timer = { path = "crates/entropy-timer" }
+qpp-rng-reference = { path = "crates/qpp-rng-reference" }
+qpp-rng-iot = { path = "crates/qpp-rng-iot" }
 
-# ---------------------------------------------------------------------
 # Profiles
-# ---------------------------------------------------------------------
 [profile.release]
 lto = true
 codegen-units = 1
 panic = "abort"
 
-# The IoT-optimized variants are judged partly on flash footprint —
+# The IoT-optimized variants are judged partly on flash footprint
 # override just that package rather than penalizing the reference impl
 # and host-side tooling with a size-first build everywhere.
 [profile.release.package.qpp-rng-iot]
 opt-level = "z"
 
-# Benchmarks want speed, not size, regardless of the above.
+# qpp-rng-reference's entropy source IS its own execution-time
+# variance (see "Raw QPP-RNG design" / "System jitter entropy
+# harvesting"): the permutation-sort convergence loop's elapsed time is
+# the jitter signal fed back into the seed. An optimizing compiler can
+# collapse that loop down to almost zero timing variance (proven
+# empirically: under this workspace's `lto = true, codegen-units = 1`
+# release profile, the generator's 128-bit seed shift register locks
+# onto a fixed point within a few dozen bytes, producing a near-constant
+# output stream). The paper sidesteps exactly this by mandating `-O0`
+# builds ("Test platforms and compilation": *"Compilation used -O0 to
+# prevent loop optimization"*); pin this crate to the same effective
+# optimization level here so downstream consumers get real entropy
+# whether or not the rest of the workspace builds in release mode.
+# (`lto`/`panic` are whole-workspace settings and can't be overridden
+# per package -- this opt-level pin is the mitigation Cargo allows, on
+# top of the `core::hint::black_box` barriers in the crate itself.)
+[profile.release.package.qpp-rng-reference]
+opt-level = 0
+
+# entropy-timer needs the same pin, for two reasons: (1) LTO merging
+# its Rust wrapper (tick()/normalize_tick) into an optimized caller can
+# still shrink a timed workload below the underlying counter's
+# resolution -- reproduced directly: entropy-timer's own
+# platform_timer_ticks_forward test fails under plain `--release`
+# (`tick() did not advance: a=258382825236, b=258382825236`), because
+# LTO+O3 optimizes its busy-loop test fixture down to less time than
+# the timer can distinguish; and (2) build.rs's `cc::Build` picks the C
+# compiler's optimization flag from this crate's own `OPT_LEVEL`, so
+# this pin also keeps the platform C timer shims themselves (RDTSC,
+# mach_absolute_time, etc.) from being over-optimized.
+[profile.release.package.entropy-timer]
+opt-level = 0
+
+# Benchmarks want speed, not size, regardless of the above, except
+# for the two crates above, where "speed" and "not collapsing the
+# timing signal these crates exist to measure" are in direct tension.
+# An optimized bench build of either would silently benchmark a broken
+# jitter source rather than a faster one, so they keep their opt-level
+# pin here too.
 [profile.bench]
 opt-level = 3
 lto = true
+
+[profile.bench.package.qpp-rng-reference]
+opt-level = 0
+
+[profile.bench.package.entropy-timer]
+opt-level = 0
