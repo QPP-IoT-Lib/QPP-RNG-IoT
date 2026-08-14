@@ -71,6 +71,29 @@
 //!   compatibility with the original authors' unpublished
 //!   implementation -- only fidelity to the algorithm each is named
 //!   after.
+//! - **Adaptive clock resolution.** The paper lists this as one of its
+//!   four contributions ("Our contributions", 4th bullet): a mechanism
+//!   that "dynamically compensates for the inherent timing granularities
+//!   of different underlying hardware platforms." A per-backend
+//!   hardcoded constant (`entropy_timer`'s `HighResTimer::init`, one
+//!   nominal value per OS/arch combination) doesn't actually provide
+//!   that -- it's a fixed guess, not something dynamic. It's also not
+//!   just a theoretical gap: it reproduced as a real failure. A Windows
+//!   desktop (bare metal, `--release`, so neither virtualization nor
+//!   the compiler-optimization collapse documented on `QppRng` was the
+//!   cause) still collapsed onto one dominant output byte, because that
+//!   machine's real `QueryPerformanceCounter` granularity didn't match
+//!   `WindowsTimer::init`'s hardcoded `100`. Real x86 hardware backs
+//!   QPC with different counters (invariant TSC, HPET, or the older
+//!   ACPI PM timer) depending on chipset/firmware, so one constant
+//!   can't fit every machine running the same backend the way it
+//!   apparently does across the more uniform Apple Silicon Mac family.
+//!   [`QppRng::with_calibrated_resolution`] (used automatically by
+//!   [`QppRng::from_seed`]) fixes this by empirically measuring the
+//!   timer's real granularity on the machine actually running the
+//!   code, via `entropy_timer::calibrate_resolution`, falling back to
+//!   the nominal constant only if the timer never visibly advances
+//!   during calibration.
 //!
 //! None of this affects the workspace's *statistical* validation: the
 //! whole point of `test-harness/stats` is to check this port's raw
@@ -78,7 +101,6 @@
 //! interpretive choices, the same way the paper validates its own
 //! implementation.
 
-//
 #![cfg_attr(
     not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
     no_std
@@ -106,6 +128,13 @@ pub const DEFAULT_ARRAY_SIZE: usize = 5;
 /// ("Configuration parameters": *"Oversampling: 5 iterations/byte
 /// (sys_osr=5)"*).
 pub const DEFAULT_OVERSAMPLE: u8 = 5;
+
+/// Default number of back-to-back timer samples
+/// [`QppRng::with_calibrated_resolution`] takes when measuring `k`
+/// empirically. Cheap (a couple hundred `tick()` calls, paid once at
+/// construction) relative to how much it matters: the "Adaptive clock
+/// resolution" fidelity note below has the motivating story.
+pub const DEFAULT_CALIBRATION_SAMPLES: u32 = 256;
 
 /// The QPP-RNG engine: a permutation-array width `N`, an internal PRNG
 /// `P` used only to draw permutation pads, and a jitter clock `T`
@@ -165,6 +194,25 @@ where
     pub fn with_oversample(mut self, oversample: u8) -> Self {
         assert!(oversample >= 1, "oversample must be at least 1");
         self.oversample = oversample;
+        self
+    }
+
+    /// Replaces `k` (the timer normalization resolution) with an
+    /// empirical measurement taken from this generator's own timer,
+    /// via [`entropy_timer::calibrate_resolution`] -- see the "Adaptive
+    /// clock resolution" fidelity note on the crate root for why
+    /// [`HighResTimer::init`]'s nominal per-backend constant alone
+    /// isn't reliably enough for real hardware.
+    ///
+    /// Not called automatically by [`Self::new`] (a hardware-timer
+    /// mock used to pin exact `Δt` sequences in a test, as `entropy-
+    /// timer`'s own test suite and this crate's do, would have that
+    /// determinism disturbed by an unpredictable number of extra
+    /// calibration `tick()` calls) -- but *is* called automatically by
+    /// [`Self::from_seed`], which is the entry point meant for real
+    /// hardware.
+    pub fn with_calibrated_resolution(mut self, samples: u32) -> Self {
+        self.k = entropy_timer::calibrate_resolution(&mut self.timer, samples, self.k);
         self
     }
 
@@ -249,8 +297,16 @@ where
 {
     /// Convenience constructor for timers that are cheap to
     /// default-construct (true of every [`entropy_timer`] backend).
+    ///
+    /// Automatically calibrates `k` against the real timer (see
+    /// [`Self::with_calibrated_resolution`]) instead of trusting
+    /// [`HighResTimer::init`]'s nominal per-backend constant alone --
+    /// this is the entry point meant for real hardware, so there's no
+    /// mock-determinism reason to skip it here the way [`Self::new`]
+    /// does.
     pub fn from_seed(seed: u128) -> Self {
         Self::new(P::default(), T::default(), seed)
+            .with_calibrated_resolution(DEFAULT_CALIBRATION_SAMPLES)
     }
 }
 
@@ -344,7 +400,9 @@ mod tests {
     }
 
     impl HighResTimer for MockTimer {
-        fn init(&mut self) -> u8 { 1 }
+        fn init(&mut self) -> u8 {
+            1
+        }
 
         fn tick(&mut self) -> u64 {
             // Every *pair* of ticks (start/stop of one convergence
