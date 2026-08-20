@@ -6,6 +6,7 @@ members = [
     "crates/conditioning",
     "crates/qpp-rng-reference",
     "crates/qpp-rng-iot",
+    "crates/qpp-rng-firmware",
     "crates/test-harness/candidates",
     "crates/test-harness/stats",
     "crates/test-harness/bench",

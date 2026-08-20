@@ -1,0 +1,44 @@
+[package]
+name = "qpp-rng-firmware"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+rand_core = { workspace = true }
+qpp-rng-reference = { workspace = true }
+conditioning = { workspace = true }
+
+[lib]
+# Shared `dump_sample` helper every [[bin]] below calls -- see
+# src/lib.rs's module doc for why there are several near-identical
+# binaries instead of one with a runtime candidate switch.
+name = "qpp_rng_firmware"
+path = "src/lib.rs"
+
+# One [[bin]] per registered candidate (`candidates::all_candidates`),
+# named to match `Candidate::name` *exactly* -- `xtask::compare`'s
+# `FIRMWARE_TARGETS` table relies on that equality to find the right
+# binary for each candidate without a separate lookup table. Adding a
+# new candidate to `candidates::all_candidates` means adding both a new
+# [[bin]] table here (pointing at a new few-line `src/bin/*.rs`, same
+# shape as the others) and a matching entry in `FIRMWARE_TARGETS`.
+
+[[bin]]
+name = "reference-xorshift128plus"
+path = "src/bin/xorshift128plus.rs"
+
+[[bin]]
+name = "reference-nextx48"
+path = "src/bin/nextx48.rs"
+
+[[bin]]
+name = "reference-xorshift128plus-sha256-conditioned"
+path = "src/bin/xorshift128plus_conditioned.rs"
+
+[[bin]]
+name = "reference-nextx48-sha256-conditioned"
+path = "src/bin/nextx48_conditioned.rs"

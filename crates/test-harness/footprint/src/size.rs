@@ -69,7 +69,7 @@ pub fn run_cargo_size(
     let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
 
     let (_success, raw_stdout, _raw_stderr) = run_capture(&tool_path, &arg_refs)?;
-    let (text_bytes, data_bytes, bss_bytes) = parse_size_berkeley(&raw_stdout);
+    let (text_bytes, data_bytes, bss_bytes) = parse_size_output(&raw_stdout);
 
     Ok(SizeReport {
         tool_path: Some(tool_path.display().to_string()),
@@ -80,31 +80,57 @@ pub fn run_cargo_size(
     })
 }
 
-/// Parses `size`'s default Berkeley-format table:
+/// Parses `cargo size`'s summary table -- in either of the two formats
+/// its underlying `size` binary can print, depending on the object
+/// format of the binary being measured:
 ///
+/// **Linux/GNU, Berkeley format** (ELF binaries):
 /// ```text
 ///    text    data     bss     dec     hex filename
 ///    9042     248      24    9314    2462 target/release/foo
 /// ```
 ///
+/// **macOS (Mach-O binaries)** -- confirmed against a real build of
+/// this workspace's `qpp-rng-firmware` `[[bin]]`, not guessed, after
+/// the Berkeley-only assumption this parser originally shipped with
+/// turned out to silently return `(None, None, None)` on every macOS
+/// run:
+/// ```text
+/// __TEXT   __DATA   __OBJC   others       dec          hex
+/// 262144   16384    0        4295065600   4295344128   10005c000
+/// ```
+/// Mach-O's summary has no BSS-equivalent column -- `__DATA` bundles
+/// initialized and uninitialized data together, and `others` is
+/// unrelated segments (`__LINKEDIT` and similar), not bss -- so
+/// `bss_bytes` comes back `None` on this branch, honestly, rather than
+/// mapping "others" to it and reporting a number that doesn't mean bss
+/// at all.
+///
 /// Takes the first data row after the header (`cargo size` normally
 /// prints exactly one).
-fn parse_size_berkeley(stdout: &str) -> (Option<u64>, Option<u64>, Option<u64>) {
+fn parse_size_output(stdout: &str) -> (Option<u64>, Option<u64>, Option<u64>) {
     let mut lines = stdout.lines();
     // Skip down to the header line so a leading "Compiling..." banner
     // (some cargo-size versions print build progress to stdout too)
     // doesn't get mistaken for the data row.
-    for line in lines.by_ref() {
-        if line.trim_start().starts_with("text") {
-            break;
-        }
-    }
+    let header = lines.by_ref().find_map(|line| {
+        let trimmed = line.trim_start();
+        (trimmed.starts_with("text") || trimmed.starts_with("__TEXT")).then_some(trimmed)
+    });
+    let Some(header) = header else {
+        return (None, None, None);
+    };
     let Some(data_line) = lines.next() else {
         return (None, None, None);
     };
     let cols: Vec<&str> = data_line.split_whitespace().collect();
     let parse_col = |i: usize| cols.get(i).and_then(|s| s.parse::<u64>().ok());
-    (parse_col(0), parse_col(1), parse_col(2))
+
+    if header.starts_with("__TEXT") {
+        (parse_col(0), parse_col(1), None)
+    } else {
+        (parse_col(0), parse_col(1), parse_col(2))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -207,7 +233,7 @@ mod tests {
 
     #[test]
     fn parses_berkeley_size_table() {
-        let (text, data, bss) = parse_size_berkeley(SAMPLE_SIZE_OUTPUT);
+        let (text, data, bss) = parse_size_output(SAMPLE_SIZE_OUTPUT);
         assert_eq!(text, Some(9042));
         assert_eq!(data, Some(248));
         assert_eq!(bss, Some(24));
@@ -216,8 +242,27 @@ mod tests {
     #[test]
     fn parse_size_berkeley_handles_a_leading_build_banner() {
         let with_banner = format!("   Compiling foo v0.1.0\n{SAMPLE_SIZE_OUTPUT}");
-        let (text, _, _) = parse_size_berkeley(&with_banner);
+        let (text, _, _) = parse_size_output(&with_banner);
         assert_eq!(text, Some(9042));
+    }
+
+    /// Real `cargo size --release -p qpp-rng-firmware --bin
+    /// qpp-rng-sample-dump-host` output, captured on this workspace's
+    /// own `[[bin]]` on Apple Silicon macOS -- the format
+    /// `parse_size_output`'s original Berkeley-only assumption silently
+    /// returned `(None, None, None)` against, on the very first real
+    /// run it ever saw.
+    const SAMPLE_MACHO_SIZE_OUTPUT: &str =
+        "__TEXT\t__DATA\t__OBJC\tothers\tdec\thex\n262144\t16384\t0\t4295065600\t4295344128\t10005c000\t\n";
+
+    #[test]
+    fn parses_macho_size_table() {
+        let (text, data, bss) = parse_size_output(SAMPLE_MACHO_SIZE_OUTPUT);
+        assert_eq!(text, Some(262144));
+        assert_eq!(data, Some(16384));
+        // No bss-equivalent column in Mach-O's summary -- see
+        // parse_size_output's doc for why "others" isn't it.
+        assert_eq!(bss, None);
     }
 
     const SAMPLE_BLOAT_OUTPUT: &str = "\

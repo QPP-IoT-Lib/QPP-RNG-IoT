@@ -204,13 +204,26 @@ fn run_bench(sh: &Shell, dry_run: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// `qpp-rng-firmware` (`crates/qpp-rng-firmware/`) has one `[[bin]]` per
+/// registered candidate, each named to match `Candidate::name`
+/// *exactly* and each calling into only that one candidate's code --
+/// see that crate's `src/lib.rs` module doc for why one binary per
+/// candidate is necessary (a single binary that picked a candidate at
+/// runtime would make every candidate's code reachable at once, which
+/// defeats the whole point: the linker could no longer dead-code-
+/// eliminate the ones not being measured, so every candidate would
+/// report the same "all of them combined" size). The name match means
+/// no separate lookup table is needed here -- `candidate.name` doubles
+/// as the `--bin` argument directly.
+const FIRMWARE_MANIFEST: &str = "crates/qpp-rng-firmware/Cargo.toml";
+const FIRMWARE_CRATE: &str = "qpp-rng-reference";
+
 fn run_footprint(args: &CompareArgs) -> anyhow::Result<Vec<PathBuf>> {
     use entropy_timer::{HighResTimer, PlatformTimer};
 
     println!(
-        "[footprint] measuring ticks/output-byte for {} candidate(s) (real cargo-size/cargo-bloat/\
-         cargo-call-stack runs need a built firmware binary -- see footprint::size's module doc \
-         -- so only the cycle-count track runs here by default)",
+        "[footprint] measuring ticks/output-byte plus real cargo-size/cargo-bloat/cargo-call-stack \
+         numbers (one qpp-rng-firmware [[bin]] per candidate) for {} candidate(s)",
         candidates::all_candidates().len()
     );
     if args.dry_run {
@@ -219,6 +232,7 @@ fn run_footprint(args: &CompareArgs) -> anyhow::Result<Vec<PathBuf>> {
 
     let dir = args.out_dir.join("footprint");
     std::fs::create_dir_all(&dir)?;
+    let firmware_manifest = workspace_root().join(FIRMWARE_MANIFEST);
 
     let mut paths = Vec::new();
     for candidate in candidates::all_candidates() {
@@ -226,17 +240,27 @@ fn run_footprint(args: &CompareArgs) -> anyhow::Result<Vec<PathBuf>> {
         let mut timer = PlatformTimer;
         timer.init();
         let cycles = footprint::cycles::measure_ticks_per_byte(rng.as_mut(), &mut timer, 10_000);
+
+        let size_report = footprint::size::run_cargo_size(&firmware_manifest, candidate.name, None)?;
+        let bloat_report = footprint::size::run_cargo_bloat(
+            &firmware_manifest,
+            candidate.name,
+            FIRMWARE_CRATE,
+            None,
+        )?;
+        let call_stack_report =
+            footprint::stack::run_cargo_call_stack(&firmware_manifest, candidate.name)?;
         println!(
-            "[footprint]   {:32} {:.2} ticks/byte",
-            candidate.name, cycles.ticks_per_output_byte
+            "[footprint]   {:46} {:8.2} ticks/byte  .text={:?}  bloat_crate_bytes={:?}",
+            candidate.name, cycles.ticks_per_output_byte, size_report.text_bytes, bloat_report.crate_bytes
         );
 
         let report = footprint::FootprintReport {
             candidate: candidate.name.to_string(),
             target_triple: None,
-            size: footprint::size::SizeReport::default(),
-            bloat: Default::default(),
-            call_stack: Default::default(),
+            size: size_report,
+            bloat: bloat_report,
+            call_stack: call_stack_report,
             cycles: Some(cycles),
         };
         let path = dir.join(format!("{}.json", candidate.name));

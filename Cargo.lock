@@ -650,6 +650,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "qpp-rng-firmware"
+version = "0.1.0"
+dependencies = [
+ "conditioning",
+ "qpp-rng-reference",
+ "rand_core 0.10.1",
+]
+
+[[package]]
 name = "qpp-rng-iot"
 version = "0.1.0"
 
