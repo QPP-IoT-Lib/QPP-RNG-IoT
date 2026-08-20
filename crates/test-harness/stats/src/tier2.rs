@@ -415,6 +415,41 @@ pub fn run_sp800_22(
         std::fs::create_dir_all(work_dir.join("experiments/AlgorithmTesting").join(dir))?;
     }
 
+    // The NonOverlappingTemplate test (`src/nonOverlappingTemplateMatchings.c`)
+    // reads its ~148 fixed template bit-patterns from `templates/template<m>`,
+    // resolved relative to assess's CWD -- same convention as everything
+    // else here. Unlike a missing sample path (which fails loudly with
+    // "File Error" and stops), a missing templates file fails *silently*
+    // from the outside: the C code detects `fopen` returning `NULL` and
+    // skips that template's per-stream loop entirely (confirmed via a
+    // real run: `stats.txt` logs "Template file <templates/template9>
+    // not existing" for every one of the 8 bitstreams) -- but
+    // `finalAnalysisReport.txt` still gets a fully-formed-looking numeric
+    // row for every one of those ~148 templates regardless, sourced from
+    // whatever was left over in memory rather than real computation. Left
+    // unfixed, those bogus rows silently dominate the overall pass rate
+    // (NonOverlappingTemplate is the majority of the battery's total row
+    // count) with numbers that vary run to run for reasons with nothing
+    // to do with the sample under test. `templates/` always ships as a
+    // sibling of the `assess` binary in a normal STS build (same
+    // directory `find_tool` located `assess` in), so copy it from there
+    // into `work_dir` once -- skipped on a `work_dir` that already has it
+    // from an earlier call, e.g. `full`'s per-candidate loop reusing one
+    // `--sts-work-dir`.
+    if let Some(sts_root) = tool_path.parent() {
+        let templates_src = sts_root.join("templates");
+        let templates_dst = work_dir.join("templates");
+        if templates_src.is_dir() && !templates_dst.is_dir() {
+            copy_dir_recursive(&templates_src, &templates_dst).with_context(|| {
+                format!(
+                    "copying STS templates from {} to {}",
+                    templates_src.display(),
+                    templates_dst.display()
+                )
+            })?;
+        }
+    }
+
     // assess resolves the "User Prescribed Input File" path relative to
     // *its own* CWD -- which `.current_dir(work_dir)` below deliberately
     // points at `work_dir`, not wherever this process's CWD happens to
@@ -440,7 +475,7 @@ pub fn run_sp800_22(
             .file_name()
             .context("sample path has no file name")?,
     );
-    std::fs::copy(&sample_path, &temp_sample_path).with_context(|| {
+    let sample_bytes = std::fs::copy(&sample_path, &temp_sample_path).with_context(|| {
         format!(
             "copying {} to space-free temp path {}",
             sample_path.display(),
@@ -449,13 +484,35 @@ pub fn run_sp800_22(
     })?;
     let sample_path = temp_sample_path;
 
+    // `assess` reads `num_bitstreams` non-overlapping, back-to-back
+    // chunks of `bitstream_len_bits` bits each straight out of the
+    // input file -- so this is also where the two numbers interact:
+    // asking for more streams than the file actually holds just makes
+    // `assess` read past EOF into whatever garbage bytes happen to
+    // follow, and asking for fewer than the file could support quietly
+    // wastes the rest of the sample.  Deriving `num_bitstreams` from
+    // the real file size instead of hardcoding it fixes both at once:
+    // every byte SP 800-90B's own `MIN_SAMPLE_BYTES` floor already
+    // guaranteed gets used, and STS's own uniformity-of-p-values
+    // sub-tests (which need *multiple* streams to have any statistical
+    // power at all -- see this function's other doc note about the
+    // `numOfBitStreams = 1` version of this being effectively a
+    // single-realization coin flip, not a stable measurement) get real
+    // power instead of none. `bitstream_len_bits` itself stays fixed at
+    // its SP 800-90B-minimum default rather than shrinking it to buy
+    // even more streams from the same file, since some of STS's 15
+    // sub-tests (Linear Complexity in particular) have their own
+    // documented minimum-sequence-length validity requirements that a
+    // shorter-than-recommended stream would violate.
+    let num_bitstreams = ((sample_bytes * 8) / bitstream_len_bits as u64).max(1);
+
     // Verified six-answer `assess` interactive flow -- see this
     // function's doc for how each line was confirmed against real
     // source/output:
     //   [0] Input File -> path -> apply all tests (1) ->
-    //   skip parameter customization (0) -> 1 bitstream -> Binary (1)
+    //   skip parameter customization (0) -> num_bitstreams -> Binary (1)
     let stdin_script = format!(
-        "0\n{}\n1\n0\n1\n1\n",
+        "0\n{}\n1\n0\n{num_bitstreams}\n1\n",
         sample_path
             .to_str()
             .context("sample path is not valid UTF-8")?
@@ -498,6 +555,24 @@ pub fn run_sp800_22(
         raw_metrics,
         parsed,
     })
+}
+
+/// Recursively copies every file/subdirectory under `src` into `dst`
+/// (which is created if missing). Not `fs::copy` alone -- `templates/`
+/// has real subdirectory structure worth preserving faithfully rather
+/// than flattening.
+fn copy_dir_recursive(src: &Path, dst: &Path) -> anyhow::Result<()> {
+    std::fs::create_dir_all(dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let dst_path = dst.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_dir_recursive(&entry.path(), &dst_path)?;
+        } else {
+            std::fs::copy(entry.path(), &dst_path)?;
+        }
+    }
+    Ok(())
 }
 
 /// Parses STS's `finalAnalysisReport.txt` summary table, which ends
@@ -549,6 +624,23 @@ Arithmetic mean value of data bytes is 127.5108 (127.5 = random).
 Monte Carlo value for Pi is 3.140501258 (error 0.03 percent).
 Serial correlation coefficient is 0.000151 (totally uncorrelated = 0.0).
 ";
+
+    #[test]
+    fn copy_dir_recursive_preserves_nested_structure_and_file_contents() {
+        let root = std::env::temp_dir().join(format!("qpp-rng-copy-dir-test-{}", std::process::id()));
+        let src = root.join("src");
+        let dst = root.join("dst");
+        std::fs::create_dir_all(src.join("nested")).unwrap();
+        std::fs::write(src.join("top.txt"), b"top-level").unwrap();
+        std::fs::write(src.join("nested/inner.txt"), b"nested-file").unwrap();
+
+        copy_dir_recursive(&src, &dst).unwrap();
+
+        assert_eq!(std::fs::read(dst.join("top.txt")).unwrap(), b"top-level");
+        assert_eq!(std::fs::read(dst.join("nested/inner.txt")).unwrap(), b"nested-file");
+
+        std::fs::remove_dir_all(&root).ok();
+    }
 
     #[test]
     fn parses_a_representative_ent_report() {
