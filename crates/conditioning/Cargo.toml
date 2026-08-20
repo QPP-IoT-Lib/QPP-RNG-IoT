@@ -1,5 +1,5 @@
 [package]
-name = "candidates"
+name = "conditioning"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,6 +10,4 @@ publish.workspace = true
 [dependencies]
 rand_core = { workspace = true }
 rng-core = { workspace = true }
-entropy-timer = { workspace = true }
-conditioning = { workspace = true }
-qpp-rng-reference = { workspace = true }
+sha2 = { workspace = true }

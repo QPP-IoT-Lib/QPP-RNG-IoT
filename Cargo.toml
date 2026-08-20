@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/rng-core",
     "crates/entropy-timer",
+    "crates/conditioning",
     "crates/qpp-rng-reference",
     "crates/qpp-rng-iot",
     "crates/test-harness/candidates",
@@ -35,11 +36,13 @@ anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
+sha2 = { version = "0.11", default-features = false }
 
 # Internal crates, referenced by path so other members can depend on
 # them as qpp-rng-reference = { workspace = true }.
 rng-core = { path = "crates/rng-core" }
 entropy-timer = { path = "crates/entropy-timer" }
+conditioning = { path = "crates/conditioning" }
 qpp-rng-reference = { path = "crates/qpp-rng-reference" }
 qpp-rng-iot = { path = "crates/qpp-rng-iot" }
 candidates = { path = "crates/test-harness/candidates" }

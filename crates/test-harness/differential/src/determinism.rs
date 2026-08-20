@@ -20,12 +20,17 @@
 //! [`candidates::Candidate::make`] returns `Box<dyn QppRngSource>` built
 //! on the real [`entropy_timer::PlatformTimer`] -- see that crate's
 //! module doc for why that erasure makes it unusable for mock-clock
-//! testing. This module instead constructs `qpp-rng-reference`'s two
+//! testing. This module instead constructs `qpp-rng-reference`'s
 //! configurations directly and generically over [`MockClock`], mirroring
 //! (deliberately duplicating, in the small way Rust's lack of
-//! higher-kinded generics forces) the two entries in
-//! `candidates::all_candidates`.
+//! higher-kinded generics forces) the entries in
+//! `candidates::all_candidates` -- including the two
+//! [`conditioning::Sha256Conditioner`]-wrapped ones: since
+//! `Sha256Conditioner<R>` is itself generic over `R: Rng`, wrapping the
+//! same `MockClock`-backed generic construction in it works exactly the
+//! same way, with no erasure problem of its own.
 
+use conditioning::Sha256Conditioner;
 use qpp_rng_reference::prng::{NextX48, Xorshift128Plus};
 use qpp_rng_reference::{DEFAULT_ARRAY_SIZE, QppRng};
 use rand_core::Rng;
@@ -88,15 +93,58 @@ fn check_nextx48_determinism(seed: u128, deltas: &[u64], n_bytes: usize) -> Dete
     diff("reference-nextx48", &buf_a, &buf_b)
 }
 
+fn check_xorshift128plus_sha256_conditioned_determinism(
+    seed: u128,
+    deltas: &[u64],
+    n_bytes: usize,
+) -> DeterminismResult {
+    let mut a = Sha256Conditioner::new(QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
+        Xorshift128Plus::default(),
+        MockClock::new(deltas.to_vec()),
+        seed,
+    ));
+    let mut b = Sha256Conditioner::new(QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
+        Xorshift128Plus::default(),
+        MockClock::new(deltas.to_vec()),
+        seed,
+    ));
+    let mut buf_a = vec![0u8; n_bytes];
+    let mut buf_b = vec![0u8; n_bytes];
+    a.fill_bytes(&mut buf_a);
+    b.fill_bytes(&mut buf_b);
+    diff("reference-xorshift128plus-sha256-conditioned", &buf_a, &buf_b)
+}
+
+fn check_nextx48_sha256_conditioned_determinism(seed: u128, deltas: &[u64], n_bytes: usize) -> DeterminismResult {
+    let mut a = Sha256Conditioner::new(QppRng::<NextX48, MockClock, DEFAULT_ARRAY_SIZE>::new(
+        NextX48::default(),
+        MockClock::new(deltas.to_vec()),
+        seed,
+    ));
+    let mut b = Sha256Conditioner::new(QppRng::<NextX48, MockClock, DEFAULT_ARRAY_SIZE>::new(
+        NextX48::default(),
+        MockClock::new(deltas.to_vec()),
+        seed,
+    ));
+    let mut buf_a = vec![0u8; n_bytes];
+    let mut buf_b = vec![0u8; n_bytes];
+    a.fill_bytes(&mut buf_a);
+    b.fill_bytes(&mut buf_b);
+    diff("reference-nextx48-sha256-conditioned", &buf_a, &buf_b)
+}
+
 /// Runs the determinism check against every `qpp-rng-reference`
-/// configuration this crate knows how to construct generically. Add a
-/// new `check_*_determinism` function here (matching one new entry in
+/// configuration this crate knows how to construct generically,
+/// raw and [`Sha256Conditioner`]-wrapped alike. Add a new
+/// `check_*_determinism` function here (matching one new entry in
 /// `candidates::all_candidates`) whenever a new implementation gains a
 /// `HighResTimer`-generic constructor -- see the module doc.
 pub fn check_all_determinism(seed: u128, deltas: &[u64], n_bytes: usize) -> Vec<DeterminismResult> {
     vec![
         check_xorshift128plus_determinism(seed, deltas, n_bytes),
         check_nextx48_determinism(seed, deltas, n_bytes),
+        check_xorshift128plus_sha256_conditioned_determinism(seed, deltas, n_bytes),
+        check_nextx48_sha256_conditioned_determinism(seed, deltas, n_bytes),
     ]
 }
 
@@ -111,7 +159,7 @@ mod tests {
             &[101, 43, 999, 7, 256, 12],
             32,
         );
-        assert_eq!(results.len(), 2);
+        assert_eq!(results.len(), 4);
         for r in &results {
             assert!(r.deterministic, "{r:?} was not deterministic");
             assert!(r.first_divergence_index.is_none());

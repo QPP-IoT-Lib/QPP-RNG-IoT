@@ -12,6 +12,7 @@ rand_core = { workspace = true }
 rng-core = { workspace = true }
 entropy-timer = { workspace = true }
 qpp-rng-reference = { workspace = true }
+conditioning = { workspace = true }
 candidates = { workspace = true }
 proptest = { workspace = true }
 serde = { workspace = true }

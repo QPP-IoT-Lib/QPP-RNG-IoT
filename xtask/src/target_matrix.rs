@@ -102,8 +102,16 @@ pub fn target_matrix() -> Vec<TargetSpec> {
             name: "hil-arduino-uno",
             triple: Some("avr-unknown-gnu-atmega328"),
             qemu_machine: None,
-            probe_rs_chip: Some("ATmega328P"),
-            description: "real Arduino Uno (matches entropy_timer::variants::avr) -- needs a nightly `-Z build-std` AVR toolchain",
+            // Not `probe_rs_chip: Some("ATmega328P")`, on purpose: classic
+            // AVR parts like this one don't expose SWD/JTAG, so `probe-rs`'s
+            // flash+RTT model (crate::hil::ProbeRsFlasher/RttTelemetry)
+            // doesn't apply here at all. Flashing goes through `avrdude`
+            // (what `ravedude`, the usual `avr-hal` runner, wraps) over the
+            // board's ISP/bootloader instead, and telemetry has to be
+            // `crate::hil::UartTelemetry` over its USB-serial bridge --
+            // there is no RTT-equivalent path on this chip.
+            probe_rs_chip: None,
+            description: "real Arduino Uno (matches entropy_timer::variants::avr) -- needs a nightly `-Z build-std` AVR toolchain; flash via avrdude/ravedude, not probe-rs, and read samples back over UART",
         },
     ]
 }

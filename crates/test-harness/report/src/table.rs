@@ -37,15 +37,25 @@ pub struct ComparisonRow {
 }
 
 impl ComparisonRow {
-    /// `true` only if every gate that actually ran passed; a gate that
-    /// never ran (`None`) doesn't count against this -- see
-    /// [`ComparisonTable`]'s module doc on missing tracks rendering as
-    /// "N/A", not "fail".
-    pub fn overall_pass(&self) -> bool {
-        [self.tier1_pass, self.deterministic, self.api_parity_pass]
-            .into_iter()
-            .flatten()
-            .all(|p| p)
+    /// `Some(true)` only if every gate that actually ran passed;
+    /// `Some(false)` if any ran gate failed. A gate that never ran
+    /// (`None`) doesn't count against this -- see [`ComparisonTable`]'s
+    /// module doc on missing tracks rendering as "N/A", not "fail".
+    ///
+    /// Returns `None` -- not `Some(true)` -- when *none* of the three
+    /// gates ran at all. `[None, None, None].flatten().all(...)` is
+    /// vacuously `true` in plain Rust, which would otherwise render a
+    /// row with zero actual data (e.g. a stray candidate name that only
+    /// ever showed up in stale `target/criterion` output from an
+    /// unrelated bench run, never in any of this crate's own gates) as
+    /// a clean pass -- exactly the kind of row that has nothing to
+    /// judge, not something that earned a checkmark.
+    pub fn overall_pass(&self) -> Option<bool> {
+        let gates = [self.tier1_pass, self.deterministic, self.api_parity_pass];
+        if gates.iter().all(Option::is_none) {
+            return None;
+        }
+        Some(gates.into_iter().flatten().all(|p| p))
     }
 }
 
@@ -149,7 +159,7 @@ mod tests {
             api_parity_pass: Some(true),
             ..Default::default()
         };
-        assert!(row.overall_pass());
+        assert_eq!(row.overall_pass(), Some(true));
     }
 
     #[test]
@@ -161,6 +171,19 @@ mod tests {
             api_parity_pass: Some(true),
             ..Default::default()
         };
-        assert!(!row.overall_pass());
+        assert_eq!(row.overall_pass(), Some(false));
+    }
+
+    #[test]
+    fn overall_pass_is_none_when_no_gate_ran_at_all() {
+        // Regression guard: a row with zero real data (e.g. a stray
+        // candidate name that only ever showed up in stale
+        // `target/criterion` bench output, never in any of this
+        // crate's own gates) must not render as a silent pass.
+        let row = ComparisonRow {
+            candidate: "qpp-rng-reference-direct-jitter/16B".into(),
+            ..Default::default()
+        };
+        assert_eq!(row.overall_pass(), None);
     }
 }

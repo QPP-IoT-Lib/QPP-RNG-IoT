@@ -16,13 +16,20 @@
 //!
 //! ## Registered today
 //!
-//! Only `qpp-rng-reference`'s two configurations (XORSHIFT128+ and
-//! NEXT_X48 permutation-pad generators). `qpp-rng-iot` is still the
-//! `cargo new` stub -- registering it here would just be a `Candidate`
-//! that always returns `4`. Once it has a real `QppRngSource` impl, add
-//! it to [`all_candidates`] the same way the two reference configs are
-//! registered below; every harness crate picks it up automatically since
-//! none of them hardcode candidate names.
+//! `qpp-rng-reference`'s two raw configurations (XORSHIFT128+ and
+//! NEXT_X48 permutation-pad generators), plus each wrapped in
+//! [`conditioning::Sha256Conditioner`] -- registering both the raw and
+//! conditioned forms side by side is exactly why `conditioning` is a
+//! separate crate from `qpp-rng-reference` rather than baked into it
+//! (see that crate's module doc): every harness track (stats, bench,
+//! footprint, differential) can compare "raw vs. conditioned" for free,
+//! with zero special-casing, the same way it compares any other two
+//! candidates. `qpp-rng-iot` is still the `cargo new` stub --
+//! registering it here would just be a `Candidate` that always returns
+//! `4`. Once it has a real `QppRngSource` impl, add it to
+//! [`all_candidates`] the same way the entries below are registered;
+//! every harness crate picks it up automatically since none of them
+//! hardcode candidate names.
 //!
 //! ## The `Box<dyn QppRngSource>` boundary
 //!
@@ -43,6 +50,7 @@
 //! duplication this implies.
 use std::boxed::Box;
 
+use conditioning::Sha256Conditioner;
 use qpp_rng_reference::{QppRngNextX48, QppRngXorshift};
 use rng_core::QppRngSource;
 
@@ -82,6 +90,18 @@ pub fn all_candidates() -> Vec<Candidate> {
             implementation: "qpp-rng-reference",
             array_size: qpp_rng_reference::DEFAULT_ARRAY_SIZE,
             make: |seed| Box::new(QppRngNextX48::from_seed(seed)),
+        },
+        Candidate {
+            name: "reference-xorshift128plus-sha256-conditioned",
+            implementation: "qpp-rng-reference + conditioning",
+            array_size: qpp_rng_reference::DEFAULT_ARRAY_SIZE,
+            make: |seed| Box::new(Sha256Conditioner::new(QppRngXorshift::from_seed(seed))),
+        },
+        Candidate {
+            name: "reference-nextx48-sha256-conditioned",
+            implementation: "qpp-rng-reference + conditioning",
+            array_size: qpp_rng_reference::DEFAULT_ARRAY_SIZE,
+            make: |seed| Box::new(Sha256Conditioner::new(QppRngNextX48::from_seed(seed))),
         },
         // qpp-rng-iot variants land here once crates/qpp-rng-iot has a
         // real QppRngSource impl. See the module doc above.

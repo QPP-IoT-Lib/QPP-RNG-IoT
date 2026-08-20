@@ -57,7 +57,11 @@ fn main() -> anyhow::Result<()> {
         println!(
             "  {:32} overall={}",
             row.candidate,
-            if row.overall_pass() { "pass" } else { "FAIL" }
+            match row.overall_pass() {
+                Some(true) => "pass",
+                Some(false) => "FAIL",
+                None => "N/A (no gate ran)",
+            }
         );
     }
 

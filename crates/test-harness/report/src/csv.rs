@@ -45,7 +45,7 @@ pub fn to_csv(table: &ComparisonTable) -> String {
             opt_str(row.ticks_per_output_byte.map(|v| v.to_string())),
             opt_str(row.deterministic.map(|b| b.to_string())),
             opt_str(row.api_parity_pass.map(|b| b.to_string())),
-            row.overall_pass().to_string(),
+            opt_str(row.overall_pass().map(|b| b.to_string())),
         ];
         out.push_str(&fields.join(","));
         out.push('\n');

@@ -49,7 +49,7 @@ pub fn to_markdown(table: &ComparisonTable) -> String {
             fmt_opt(row.ticks_per_output_byte, |v| format!("{v:.2}")),
             fmt_bool(row.deterministic),
             fmt_bool(row.api_parity_pass),
-            if row.overall_pass() { "✅".to_string() } else { "❌".to_string() },
+            fmt_bool(row.overall_pass()),
         ];
         out.push_str("| ");
         out.push_str(&cells.join(" | "));

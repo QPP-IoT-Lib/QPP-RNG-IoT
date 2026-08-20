@@ -187,10 +187,18 @@ fn run_stats(args: &CompareArgs, out_path: &std::path::Path) -> anyhow::Result<(
 }
 
 fn run_bench(sh: &Shell, dry_run: bool) -> anyhow::Result<()> {
-    println!("[bench] cargo bench -p bench");
+    let criterion_dir = workspace_root().join("target/criterion");
+    println!(
+        "[bench] removing {} (criterion accumulates every group it's ever seen, including from \
+         unrelated past runs -- report::ingest::ingest_bench reads all of it indiscriminately, \
+         so a stale group here would otherwise show up as a phantom row in the comparison) \
+         then cargo bench -p bench",
+        criterion_dir.display()
+    );
     if dry_run {
         return Ok(());
     }
+    std::fs::remove_dir_all(&criterion_dir).ok(); // fine if it didn't exist yet
     Shell::change_dir(sh, workspace_root());
     cmd!(sh, "cargo bench -p bench").run().context("running cargo bench -p bench")?;
     Ok(())
@@ -286,7 +294,11 @@ fn run_report(
         println!(
             "[report]   {:32} overall={}",
             row.candidate,
-            if row.overall_pass() { "pass" } else { "FAIL" }
+            match row.overall_pass() {
+                Some(true) => "pass",
+                Some(false) => "FAIL",
+                None => "N/A (no gate ran)",
+            }
         );
     }
     Ok(())
