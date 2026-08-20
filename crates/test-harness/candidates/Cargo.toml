@@ -1,5 +1,5 @@
 [package]
-name = "footprint"
+name = "candidates"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,12 +11,4 @@ publish.workspace = true
 rand_core = { workspace = true }
 rng-core = { workspace = true }
 entropy-timer = { workspace = true }
-candidates = { workspace = true }
-anyhow = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-clap = { workspace = true }
-
-[[bin]]
-name = "footprint-cli"
-path = "src/bin/footprint_cli.rs"
+qpp-rng-reference = { workspace = true }

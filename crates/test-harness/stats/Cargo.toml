@@ -8,3 +8,14 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+rand_core = { workspace = true }
+rng-core = { workspace = true }
+candidates = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+clap = { workspace = true }
+
+[[bin]]
+name = "stats-cli"
+path = "src/bin/stats_cli.rs"

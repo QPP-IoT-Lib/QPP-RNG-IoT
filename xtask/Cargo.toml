@@ -6,3 +6,23 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+xshell = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Path dependencies into the main workspace. xtask stays its own
+# top-level Cargo workspace (see the root Cargo.toml's `exclude`
+# comment) so its own dependency resolution/Cargo.lock -- xshell,
+# clap, and eventually probe-rs for crate::hil -- doesn't affect the
+# library workspace the rest of this repo builds; path dependencies
+# work fine across that boundary regardless.
+rng-core = { path = "../crates/rng-core" }
+entropy-timer = { path = "../crates/entropy-timer" }
+candidates = { path = "../crates/test-harness/candidates" }
+stats = { path = "../crates/test-harness/stats" }
+bench = { path = "../crates/test-harness/bench" }
+footprint = { path = "../crates/test-harness/footprint" }
+differential = { path = "../crates/test-harness/differential" }
+report = { path = "../crates/test-harness/report" }

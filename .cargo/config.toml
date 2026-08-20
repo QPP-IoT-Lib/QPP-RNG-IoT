@@ -1,0 +1,5 @@
+# Lets `cargo xtask <subcommand>` work from the workspace root even
+# though xtask/ is its own separate Cargo workspace (see xtask/src/main.rs's
+# module doc, and the root Cargo.toml's `exclude` comment, for why).
+[alias]
+xtask = "run --quiet --manifest-path xtask/Cargo.toml --"

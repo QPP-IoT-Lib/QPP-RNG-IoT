@@ -5,6 +5,7 @@ members = [
     "crates/entropy-timer",
     "crates/qpp-rng-reference",
     "crates/qpp-rng-iot",
+    "crates/test-harness/candidates",
     "crates/test-harness/stats",
     "crates/test-harness/bench",
     "crates/test-harness/footprint",
@@ -33,6 +34,7 @@ criterion = "0.8.2"
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+clap = { version = "4", features = ["derive"] }
 
 # Internal crates, referenced by path so other members can depend on
 # them as qpp-rng-reference = { workspace = true }.
@@ -40,6 +42,12 @@ rng-core = { path = "crates/rng-core" }
 entropy-timer = { path = "crates/entropy-timer" }
 qpp-rng-reference = { path = "crates/qpp-rng-reference" }
 qpp-rng-iot = { path = "crates/qpp-rng-iot" }
+candidates = { path = "crates/test-harness/candidates" }
+stats = { path = "crates/test-harness/stats" }
+bench = { path = "crates/test-harness/bench" }
+footprint = { path = "crates/test-harness/footprint" }
+differential = { path = "crates/test-harness/differential" }
+report = { path = "crates/test-harness/report" }
 
 # Profiles
 [profile.release]

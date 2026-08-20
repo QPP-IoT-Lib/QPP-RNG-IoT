@@ -8,3 +8,17 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+rand_core = { workspace = true }
+rng-core = { workspace = true }
+entropy-timer = { workspace = true }
+qpp-rng-reference = { workspace = true }
+candidates = { workspace = true }
+proptest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+
+[[bin]]
+name = "differential-cli"
+path = "src/bin/differential_cli.rs"
