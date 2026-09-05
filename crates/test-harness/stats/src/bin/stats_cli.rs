@@ -60,7 +60,12 @@ fn main() -> anyhow::Result<()> {
         Command::GenerateSamples { dir, bytes, seed } => {
             let files = sample::generate_all_candidate_samples(&dir, bytes, seed)?;
             for f in &files {
-                println!("{:32} {:>10} bytes  {}", f.candidate, f.len_bytes, f.path.display());
+                println!(
+                    "{:32} {:>10} bytes  {}",
+                    f.candidate,
+                    f.len_bytes,
+                    f.path.display()
+                );
             }
         }
         Command::Tier1 { file, out } => {
@@ -120,7 +125,11 @@ fn main() -> anyhow::Result<()> {
             }
 
             std::fs::write(&out, serde_json::to_string_pretty(&reports)?)?;
-            println!("wrote {} candidate report(s) to {}", reports.len(), out.display());
+            println!(
+                "wrote {} candidate report(s) to {}",
+                reports.len(),
+                out.display()
+            );
         }
     }
     Ok(())

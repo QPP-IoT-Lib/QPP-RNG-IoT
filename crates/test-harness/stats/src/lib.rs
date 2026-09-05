@@ -20,4 +20,4 @@ pub mod sample;
 pub mod tier1;
 pub mod tier2;
 
-pub use report::{run_full_battery, StatReport, Tier2Options};
+pub use report::{StatReport, Tier2Options, run_full_battery};

@@ -8,7 +8,10 @@ use std::path::PathBuf;
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(name = "bench-export", about = "Export criterion's JSON output into a BenchReport")]
+#[command(
+    name = "bench-export",
+    about = "Export criterion's JSON output into a BenchReport"
+)]
 struct Cli {
     /// Criterion's output directory, normally `target/criterion`.
     #[arg(long, default_value = "target/criterion")]

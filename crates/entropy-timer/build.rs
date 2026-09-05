@@ -29,32 +29,31 @@ fn main() {
     let is_x86 = matches!(target_arch.as_str(), "x86" | "x86_64");
 
     // Dynamically compile the right C shim for the target.
-    let c_file =
-        if target_os == "windows" {
-            "c/windows_qpc.c"
-        } else if target_os == "macos" && target_arch == "aarch64" {
-            "c/macos_mach.c"
-        } else if (target_os == "linux" || target_os == "macos") && is_x86 {
-            "c/x86_tsc.c"
-        } else if target_os == "linux" && target_arch == "aarch64" {
-            "c/linux_arm64_cntvct.c"
-        } else if target_os == "linux" && target_arch == "arm" {
-            "c/linux_arm32_pmu.c"
-        } else if target_arch == "xtensa" {
-            "c/esp32_timer.c"
-        } else if target_arch == "avr" {
-            "c/avr_timer.c"
-        } else if target_family == "unix" {
-            "c/posix_timer.c"
-        } else {
-            panic!(
-                "entropy-timer: no high-resolution timer backend for \
+    let c_file = if target_os == "windows" {
+        "c/windows_qpc.c"
+    } else if target_os == "macos" && target_arch == "aarch64" {
+        "c/macos_mach.c"
+    } else if (target_os == "linux" || target_os == "macos") && is_x86 {
+        "c/x86_tsc.c"
+    } else if target_os == "linux" && target_arch == "aarch64" {
+        "c/linux_arm64_cntvct.c"
+    } else if target_os == "linux" && target_arch == "arm" {
+        "c/linux_arm32_pmu.c"
+    } else if target_arch == "xtensa" {
+        "c/esp32_timer.c"
+    } else if target_arch == "avr" {
+        "c/avr_timer.c"
+    } else if target_family == "unix" {
+        "c/posix_timer.c"
+    } else {
+        panic!(
+            "entropy-timer: no high-resolution timer backend for \
              target_arch=\"{target_arch}\", target_os=\"{target_os}\", \
              target_family=\"{target_family}\". Add a c/*.c shim and a \
              matching src/variants/ backend, or build for a supported \
              target."
-            );
-        };
+        );
+    };
 
     println!("cargo:rerun-if-changed={c_file}");
 

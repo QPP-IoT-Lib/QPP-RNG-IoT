@@ -252,8 +252,7 @@ mod tests {
     /// `parse_size_output`'s original Berkeley-only assumption silently
     /// returned `(None, None, None)` against, on the very first real
     /// run it ever saw.
-    const SAMPLE_MACHO_SIZE_OUTPUT: &str =
-        "__TEXT\t__DATA\t__OBJC\tothers\tdec\thex\n262144\t16384\t0\t4295065600\t4295344128\t10005c000\t\n";
+    const SAMPLE_MACHO_SIZE_OUTPUT: &str = "__TEXT\t__DATA\t__OBJC\tothers\tdec\thex\n262144\t16384\t0\t4295065600\t4295344128\t10005c000\t\n";
 
     #[test]
     fn parses_macho_size_table() {
@@ -282,11 +281,17 @@ File  .text     Size Crate
 
     #[test]
     fn missing_crate_row_returns_none() {
-        assert_eq!(find_crate_row_bytes(SAMPLE_BLOAT_OUTPUT, "not-a-real-crate"), None);
+        assert_eq!(
+            find_crate_row_bytes(SAMPLE_BLOAT_OUTPUT, "not-a-real-crate"),
+            None
+        );
     }
 
     #[test]
     fn parse_size_with_unit_handles_plain_bytes() {
-        assert_eq!(parse_size_with_unit(" 4.2%  10.5%    512B some_crate"), Some(512));
+        assert_eq!(
+            parse_size_with_unit(" 4.2%  10.5%    512B some_crate"),
+            Some(512)
+        );
     }
 }

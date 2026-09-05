@@ -6,7 +6,10 @@ use std::path::PathBuf;
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(name = "report-cli", about = "Aggregate the QPP-RNG test-harness tracks into one comparison report")]
+#[command(
+    name = "report-cli",
+    about = "Aggregate the QPP-RNG test-harness tracks into one comparison report"
+)]
 struct Cli {
     /// JSON array written by `stats-cli full --out <path>`. Omit (or
     /// point at a nonexistent path) to render that track as N/A.

@@ -23,7 +23,8 @@ pub fn ingest_stats(path: &Path) -> anyhow::Result<Vec<StatReport>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
-    let text = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let text =
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))
 }
 
@@ -46,7 +47,9 @@ pub fn ingest_footprint(paths: &[std::path::PathBuf]) -> anyhow::Result<Vec<Foot
     for path in paths {
         let text =
             std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-        out.push(serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?);
+        out.push(
+            serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?,
+        );
     }
     Ok(out)
 }
@@ -56,7 +59,8 @@ pub fn ingest_differential(path: &Path) -> anyhow::Result<Option<DifferentialRep
     if !path.exists() {
         return Ok(None);
     }
-    let text = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let text =
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     Ok(Some(
         serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?,
     ))

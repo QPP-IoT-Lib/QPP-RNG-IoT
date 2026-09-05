@@ -29,4 +29,4 @@ pub mod strategies;
 #[cfg(test)]
 mod fuzz;
 
-pub use report::{run_all, DifferentialReport};
+pub use report::{DifferentialReport, run_all};

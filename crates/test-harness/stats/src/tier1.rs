@@ -127,11 +127,7 @@ pub fn runs_test(bytes: &[u8]) -> Tier1Metric {
     // The observed run count is still a well-defined, JSON-safe number
     // even when the pre-test below fails -- always compute it, so a
     // serialized report never carries a NaN/null statistic.
-    let v_obs = 1.0
-        + bit_vec
-            .windows(2)
-            .filter(|w| w[0] != w[1])
-            .count() as f64;
+    let v_obs = 1.0 + bit_vec.windows(2).filter(|w| w[0] != w[1]).count() as f64;
 
     if (pi - 0.5).abs() >= 2.0 / (n as f64).sqrt() {
         return Tier1Metric {
@@ -304,8 +300,7 @@ mod tests {
     /// so this also exercises [`bits`]'s byte-to-bit packing.
     #[test]
     fn monobit_matches_nist_sp800_22_section_2_1_8_worked_example() {
-        const BITS: &str =
-            "1100100100001111110110101010001000100001011010001100001000\
+        const BITS: &str = "1100100100001111110110101010001000100001011010001100001000\
              110100110001001100011001100010100010111000";
         assert_eq!(BITS.len(), 100);
         let bytes = pack_bit_string(BITS);
@@ -393,7 +388,11 @@ mod tests {
         assert!(report.monobit.pass, "{:?}", report.monobit);
         assert!(report.runs.pass, "{:?}", report.runs);
         assert!(report.chi_square.pass, "{:?}", report.chi_square);
-        assert!(report.serial_correlation.pass, "{:?}", report.serial_correlation);
+        assert!(
+            report.serial_correlation.pass,
+            "{:?}",
+            report.serial_correlation
+        );
         assert!(
             report.shannon_entropy_bits_per_byte.pass,
             "{:?}",

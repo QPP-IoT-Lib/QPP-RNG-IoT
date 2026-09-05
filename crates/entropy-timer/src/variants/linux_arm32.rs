@@ -21,7 +21,6 @@ impl HighResTimer for LinuxArm32Timer {
     fn init(&mut self) -> u8 {
         // The PMU availability probe runs lazily, on first `tick()`.
         1 // ns is the native timer resolution on Linux ARM32
-
     }
 
     fn tick(&mut self) -> u64 {

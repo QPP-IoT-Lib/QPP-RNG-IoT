@@ -184,7 +184,8 @@ impl<R: Rng> TryRng for Sha256Conditioner<R> {
             }
             let available = OUTPUT_BLOCK_BYTES - self.out_pos;
             let take = available.min(dst.len() - written);
-            dst[written..written + take].copy_from_slice(&self.out_buf[self.out_pos..self.out_pos + take]);
+            dst[written..written + take]
+                .copy_from_slice(&self.out_buf[self.out_pos..self.out_pos + take]);
             self.out_pos += take;
             written += take;
         }

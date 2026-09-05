@@ -144,7 +144,13 @@ mod tests {
 
     #[test]
     fn gamma_q_is_complement_of_gamma_p() {
-        for &(a, x) in &[(0.5, 0.1), (2.0, 3.0), (10.0, 5.0), (50.0, 60.0), (127.5, 300.0)] {
+        for &(a, x) in &[
+            (0.5, 0.1),
+            (2.0, 3.0),
+            (10.0, 5.0),
+            (50.0, 60.0),
+            (127.5, 300.0),
+        ] {
             let q = regularized_gamma_q(a, x);
             let p = gamma_p_series(a, x).max(1.0 - gamma_q_continued_fraction(a, x));
             // Whichever branch regularized_gamma_q actually took, P+Q

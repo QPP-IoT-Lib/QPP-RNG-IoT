@@ -139,14 +139,21 @@ pub fn run_full_battery(
     let sp800_90b_non_iid = tier2_opts
         .sp800_90b_non_iid
         .then(|| {
-            tier2::run_sp800_90b(sample_path, tier2_opts.bits_per_symbol, Sp80090bTrack::NonIid)
+            tier2::run_sp800_90b(
+                sample_path,
+                tier2_opts.bits_per_symbol,
+                Sp80090bTrack::NonIid,
+            )
         })
         .transpose()?;
     let sp800_22 = tier2_opts
         .sp800_22
         .then(|| tier2::run_sp800_22(sample_path, tier2_opts.sts_bitstream_len_bits, sts_work_dir))
         .transpose()?;
-    let ent = tier2_opts.ent.then(|| tier2::run_ent(sample_path)).transpose()?;
+    let ent = tier2_opts
+        .ent
+        .then(|| tier2::run_ent(sample_path))
+        .transpose()?;
 
     Ok(StatReport {
         candidate: candidate.to_string(),
@@ -166,7 +173,8 @@ mod tests {
 
     #[test]
     fn run_full_battery_with_tier2_disabled_only_runs_tier1() {
-        let dir = std::env::temp_dir().join(format!("qpp-rng-stats-report-test-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("qpp-rng-stats-report-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let sample_path = dir.join("sample.bin");
         std::fs::write(&sample_path, vec![7u8; 5000]).unwrap();
