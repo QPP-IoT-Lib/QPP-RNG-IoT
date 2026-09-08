@@ -57,11 +57,7 @@ fn diff(candidate: &str, buf_a: &[u8], buf_b: &[u8]) -> DeterminismResult {
     }
 }
 
-fn check_xorshift128plus_determinism(
-    seed: u128,
-    deltas: &[u64],
-    n_bytes: usize,
-) -> DeterminismResult {
+fn check_xorshift128plus_determinism(seed: u128, deltas: &[u64], n_bytes: usize) -> DeterminismResult {
     let mut a = QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
         Xorshift128Plus::default(),
         MockClock::new(deltas.to_vec()),
@@ -102,36 +98,24 @@ fn check_xorshift128plus_sha256_conditioned_determinism(
     deltas: &[u64],
     n_bytes: usize,
 ) -> DeterminismResult {
-    let mut a = Sha256Conditioner::new(
-        QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
-            Xorshift128Plus::default(),
-            MockClock::new(deltas.to_vec()),
-            seed,
-        ),
-    );
-    let mut b = Sha256Conditioner::new(
-        QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
-            Xorshift128Plus::default(),
-            MockClock::new(deltas.to_vec()),
-            seed,
-        ),
-    );
+    let mut a = Sha256Conditioner::new(QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
+        Xorshift128Plus::default(),
+        MockClock::new(deltas.to_vec()),
+        seed,
+    ));
+    let mut b = Sha256Conditioner::new(QppRng::<Xorshift128Plus, MockClock, DEFAULT_ARRAY_SIZE>::new(
+        Xorshift128Plus::default(),
+        MockClock::new(deltas.to_vec()),
+        seed,
+    ));
     let mut buf_a = vec![0u8; n_bytes];
     let mut buf_b = vec![0u8; n_bytes];
     a.fill_bytes(&mut buf_a);
     b.fill_bytes(&mut buf_b);
-    diff(
-        "reference-xorshift128plus-sha256-conditioned",
-        &buf_a,
-        &buf_b,
-    )
+    diff("reference-xorshift128plus-sha256-conditioned", &buf_a, &buf_b)
 }
 
-fn check_nextx48_sha256_conditioned_determinism(
-    seed: u128,
-    deltas: &[u64],
-    n_bytes: usize,
-) -> DeterminismResult {
+fn check_nextx48_sha256_conditioned_determinism(seed: u128, deltas: &[u64], n_bytes: usize) -> DeterminismResult {
     let mut a = Sha256Conditioner::new(QppRng::<NextX48, MockClock, DEFAULT_ARRAY_SIZE>::new(
         NextX48::default(),
         MockClock::new(deltas.to_vec()),

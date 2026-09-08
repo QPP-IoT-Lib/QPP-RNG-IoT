@@ -76,10 +76,7 @@ pub fn build_comparison_table(
 ) -> ComparisonTable {
     let mut rows: BTreeMap<String, ComparisonRow> = BTreeMap::new();
 
-    fn row_for<'a>(
-        rows: &'a mut BTreeMap<String, ComparisonRow>,
-        candidate: &str,
-    ) -> &'a mut ComparisonRow {
+    fn row_for<'a>(rows: &'a mut BTreeMap<String, ComparisonRow>, candidate: &str) -> &'a mut ComparisonRow {
         rows.entry(candidate.to_string())
             .or_insert_with(|| ComparisonRow {
                 candidate: candidate.to_string(),

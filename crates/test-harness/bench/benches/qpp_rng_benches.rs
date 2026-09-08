@@ -32,7 +32,7 @@
 use std::time::Duration;
 
 use candidates::all_candidates;
-use criterion::{BatchSize, Criterion, Throughput, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
 use rand_core::Rng;
 
 /// Shared seed for every benchmarked instance. Fine to hardcode: none

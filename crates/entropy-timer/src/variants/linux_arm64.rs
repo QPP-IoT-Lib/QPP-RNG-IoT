@@ -17,6 +17,7 @@ impl HighResTimer for LinuxArm64Timer {
     fn init(&mut self) -> u8 {
         // CNTVCT_EL0 is unconditionally readable from EL0 under Linux.
         34 // ns is the native timer resolution on Linux aarch64
+
     }
 
     fn tick(&mut self) -> u64 {

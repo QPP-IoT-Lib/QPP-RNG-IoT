@@ -111,10 +111,7 @@ pub struct CallStackReport {
 /// isn't installed, exactly like every other Tier 2-style external-tool
 /// wrapper in this workspace: a missing tool is a reportable state, not
 /// an error.
-pub fn run_cargo_call_stack(
-    manifest_path: &Path,
-    binary_name: &str,
-) -> anyhow::Result<CallStackReport> {
+pub fn run_cargo_call_stack(manifest_path: &Path, binary_name: &str) -> anyhow::Result<CallStackReport> {
     let Some(tool_path) = find_tool(&["cargo-call-stack"]) else {
         return Ok(CallStackReport::default());
     };

@@ -8,10 +8,7 @@ use std::path::PathBuf;
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(
-    name = "differential-cli",
-    about = "QPP-RNG determinism + API parity checks"
-)]
+#[command(name = "differential-cli", about = "QPP-RNG determinism + API parity checks")]
 struct Cli {
     #[arg(long, default_value_t = 0x5EED_0000_1111_2222_3333_4444_5555_6666)]
     seed: u128,
@@ -35,12 +32,7 @@ fn main() -> anyhow::Result<()> {
         );
     }
     for p in &report.parity {
-        eprintln!(
-            "parity:      {:32} pass={} errors={:?}",
-            p.candidate,
-            p.all_passed(),
-            p.errors
-        );
+        eprintln!("parity:      {:32} pass={} errors={:?}", p.candidate, p.all_passed(), p.errors);
     }
 
     std::fs::write(&cli.out, serde_json::to_string_pretty(&report)?)?;

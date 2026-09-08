@@ -43,10 +43,7 @@ pub fn check_parity(candidate: &candidates::Candidate, seed: u128) -> ParityResu
             rng.fill_bytes(&mut empty);
         }));
         if let Err(e) = &result {
-            errors.push(format!(
-                "fill_bytes(&mut []) panicked: {}",
-                panic_message(e)
-            ));
+            errors.push(format!("fill_bytes(&mut []) panicked: {}", panic_message(e)));
         }
         result.is_ok()
     };
@@ -70,9 +67,7 @@ pub fn check_parity(candidate: &candidates::Candidate, seed: u128) -> ParityResu
         rng.fill_bytes(&mut buf);
         let changed = buf != before;
         if !changed {
-            errors.push(
-                "fill_bytes left the buffer exactly as it was (looks like a no-op)".to_string(),
-            );
+            errors.push("fill_bytes left the buffer exactly as it was (looks like a no-op)".to_string());
         }
         changed
     };
@@ -80,13 +75,11 @@ pub fn check_parity(candidate: &candidates::Candidate, seed: u128) -> ParityResu
     let diag = rng.diagnostics();
     let diagnostics_report_nonzero_activity = diag.last_permutation_count > 0;
     if !diagnostics_report_nonzero_activity {
-        errors
-            .push("diagnostics().last_permutation_count was 0 after generating output".to_string());
+        errors.push("diagnostics().last_permutation_count was 0 after generating output".to_string());
     }
 
     let expected_bits = permutation_entropy_bits(candidate.array_size);
-    let diagnostics_permutation_size_matches_array_size =
-        diag.permutation_size_bits == expected_bits;
+    let diagnostics_permutation_size_matches_array_size = diag.permutation_size_bits == expected_bits;
     if !diagnostics_permutation_size_matches_array_size {
         errors.push(format!(
             "diagnostics().permutation_size_bits = {}, expected floor(log2({}!)) = {}",

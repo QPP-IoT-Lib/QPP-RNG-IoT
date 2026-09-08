@@ -173,14 +173,12 @@ mod tests {
                 run explicitly with `cargo test -- --ignored`"]
     fn generate_all_candidate_samples_writes_one_file_per_candidate() {
         let dir = std::env::temp_dir().join(format!("qpp-rng-stats-test-{}", std::process::id()));
-        let files = generate_all_candidate_samples(&dir, MIN_SAMPLE_BYTES, 0x1234_5678).unwrap();
+        let files =
+            generate_all_candidate_samples(&dir, MIN_SAMPLE_BYTES, 0x1234_5678).unwrap();
         assert_eq!(files.len(), candidates::all_candidates().len());
         for f in &files {
             assert!(f.path.exists());
-            assert_eq!(
-                std::fs::metadata(&f.path).unwrap().len() as usize,
-                f.len_bytes
-            );
+            assert_eq!(std::fs::metadata(&f.path).unwrap().len() as usize, f.len_bytes);
         }
         std::fs::remove_dir_all(&dir).ok();
     }

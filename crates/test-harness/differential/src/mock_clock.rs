@@ -24,10 +24,7 @@ impl MockClock {
     /// If `deltas` is empty -- a clock that never advances by anything
     /// isn't a meaningful script to replay.
     pub fn new(deltas: Vec<u64>) -> Self {
-        assert!(
-            !deltas.is_empty(),
-            "MockClock needs at least one scripted delta"
-        );
+        assert!(!deltas.is_empty(), "MockClock needs at least one scripted delta");
         Self {
             deltas,
             idx: 0,

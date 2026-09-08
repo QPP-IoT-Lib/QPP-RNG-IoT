@@ -9,10 +9,7 @@ use footprint::report::FootprintReport;
 use footprint::{cycles, size, stack};
 
 #[derive(Parser)]
-#[command(
-    name = "footprint-cli",
-    about = "QPP-RNG footprint (size/stack/cycles) harness"
-)]
+#[command(name = "footprint-cli", about = "QPP-RNG footprint (size/stack/cycles) harness")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -59,11 +56,7 @@ enum Command {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Cycles {
-            candidate,
-            bytes,
-            seed,
-        } => {
+        Command::Cycles { candidate, bytes, seed } => {
             let Some(c) = candidates::find(&candidate) else {
                 anyhow::bail!("unknown candidate {candidate:?}");
             };

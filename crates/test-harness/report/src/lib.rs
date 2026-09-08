@@ -16,4 +16,4 @@ pub mod ingest;
 pub mod markdown;
 pub mod table;
 
-pub use table::{ComparisonRow, ComparisonTable, build_comparison_table};
+pub use table::{build_comparison_table, ComparisonRow, ComparisonTable};

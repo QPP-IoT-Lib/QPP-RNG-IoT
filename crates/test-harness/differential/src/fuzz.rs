@@ -16,8 +16,8 @@
 //! `proptest!` block below instead.
 
 use proptest::prelude::*;
-use qpp_rng_reference::QppRng;
 use qpp_rng_reference::prng::{NextX48, Xorshift128Plus};
+use qpp_rng_reference::QppRng;
 use rand_core::Rng;
 
 use crate::mock_clock::MockClock;

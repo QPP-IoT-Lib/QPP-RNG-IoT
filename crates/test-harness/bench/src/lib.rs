@@ -185,12 +185,7 @@ fn find_new_dirs(root: &Path) -> anyhow::Result<Vec<PathBuf>> {
 mod tests {
     use super::*;
 
-    fn write_fake_criterion_output(
-        root: &Path,
-        group: &str,
-        function: &str,
-        bytes_throughput: Option<u64>,
-    ) {
+    fn write_fake_criterion_output(root: &Path, group: &str, function: &str, bytes_throughput: Option<u64>) {
         let new_dir = root.join(group).join(function).join("new");
         fs::create_dir_all(&new_dir).unwrap();
 
@@ -217,11 +212,7 @@ mod tests {
                 "standard_error": 0.2
             }
         });
-        fs::write(
-            new_dir.join("estimates.json"),
-            serde_json::to_string(&estimates).unwrap(),
-        )
-        .unwrap();
+        fs::write(new_dir.join("estimates.json"), serde_json::to_string(&estimates).unwrap()).unwrap();
 
         let throughput = bytes_throughput.map(|n| serde_json::json!({"Bytes": n}));
         let benchmark = serde_json::json!({
@@ -233,17 +224,12 @@ mod tests {
             "directory_name": format!("{group}/{function}"),
             "title": format!("{group}/{function}"),
         });
-        fs::write(
-            new_dir.join("benchmark.json"),
-            serde_json::to_string(&benchmark).unwrap(),
-        )
-        .unwrap();
+        fs::write(new_dir.join("benchmark.json"), serde_json::to_string(&benchmark).unwrap()).unwrap();
     }
 
     #[test]
     fn export_reads_mean_and_computes_throughput() {
-        let dir =
-            std::env::temp_dir().join(format!("qpp-rng-bench-export-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("qpp-rng-bench-export-test-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         write_fake_criterion_output(&dir, "throughput", "reference-xorshift128plus", Some(64));
         write_fake_criterion_output(&dir, "latency_per_call", "reference-xorshift128plus", None);
@@ -279,8 +265,7 @@ mod tests {
 
     #[test]
     fn export_skips_the_report_html_directory() {
-        let dir =
-            std::env::temp_dir().join(format!("qpp-rng-bench-export-test2-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("qpp-rng-bench-export-test2-{}", std::process::id()));
         fs::create_dir_all(dir.join("report").join("new")).unwrap();
         // A `report/new` dir with no estimates/benchmark json should be
         // silently skipped, not error the whole export.

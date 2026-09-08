@@ -135,8 +135,8 @@ fn first_float_token(rest: &str) -> Option<f64> {
     let chars: Vec<char> = rest.chars().collect();
     let mut i = 0;
     while i < chars.len() {
-        let is_number_start = chars[i].is_ascii_digit()
-            || (chars[i] == '-' && chars.get(i + 1).is_some_and(char::is_ascii_digit));
+        let is_number_start =
+            chars[i].is_ascii_digit() || (chars[i] == '-' && chars.get(i + 1).is_some_and(char::is_ascii_digit));
         if !is_number_start {
             i += 1;
             continue;
@@ -162,10 +162,7 @@ fn first_float_token(rest: &str) -> Option<f64> {
     None
 }
 
-fn run_command_capture(
-    program: &Path,
-    args: &[&std::ffi::OsStr],
-) -> anyhow::Result<(bool, String, String)> {
+fn run_command_capture(program: &Path, args: &[&std::ffi::OsStr]) -> anyhow::Result<(bool, String, String)> {
     let output = Command::new(program)
         .args(args)
         .output()
@@ -591,13 +588,11 @@ fn parse_sts_final_report(report: &str) -> Option<Sp80022Result> {
         for token in line.split_whitespace() {
             if let Some((p, t)) = token.split_once('/')
                 && let (Ok(p), Ok(t)) = (p.parse::<usize>(), t.parse::<usize>())
-                && t > 0
-                && p <= t
-            {
-                passed_total += p;
-                tests_total += t;
-                any_row = true;
-            }
+                    && t > 0 && p <= t {
+                        passed_total += p;
+                        tests_total += t;
+                        any_row = true;
+                    }
         }
     }
 
@@ -632,8 +627,7 @@ Serial correlation coefficient is 0.000151 (totally uncorrelated = 0.0).
 
     #[test]
     fn copy_dir_recursive_preserves_nested_structure_and_file_contents() {
-        let root =
-            std::env::temp_dir().join(format!("qpp-rng-copy-dir-test-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("qpp-rng-copy-dir-test-{}", std::process::id()));
         let src = root.join("src");
         let dst = root.join("dst");
         std::fs::create_dir_all(src.join("nested")).unwrap();
@@ -643,10 +637,7 @@ Serial correlation coefficient is 0.000151 (totally uncorrelated = 0.0).
         copy_dir_recursive(&src, &dst).unwrap();
 
         assert_eq!(std::fs::read(dst.join("top.txt")).unwrap(), b"top-level");
-        assert_eq!(
-            std::fs::read(dst.join("nested/inner.txt")).unwrap(),
-            b"nested-file"
-        );
+        assert_eq!(std::fs::read(dst.join("nested/inner.txt")).unwrap(), b"nested-file");
 
         std::fs::remove_dir_all(&root).ok();
     }
@@ -667,10 +658,9 @@ Serial correlation coefficient is 0.000151 (totally uncorrelated = 0.0).
     fn extract_key_value_pairs_ignores_units_and_keeps_first_number() {
         let map = extract_key_value_pairs(SAMPLE_ENT_OUTPUT);
         assert!((map["Entropy"] - 7.999826).abs() < 1e-6);
-        assert!(
-            (map["Serial correlation coefficient is 0.000151 (totally uncorrelated"] - 0.0).abs()
-                < 1e-9
-        );
+        assert!((map["Serial correlation coefficient is 0.000151 (totally uncorrelated"] - 0.0)
+            .abs()
+            < 1e-9);
     }
 
     #[test]
