@@ -1,10 +1,12 @@
 //! The entropy-timer crate is in charge of measuring the cpu time
 //! C is used for its high-resolution timers in a multi-platform setting.
-//! These platforms include ESP32 with Wifi, Raspi0, Raspi4, Arduino Uno, Arduino Nano
+//! These platforms include ESP32 with Wifi, Raspi0, Raspi4, Arduino Uno,
+//! Arduino Nano, Arduino Mega 2560, and Cortex-M boards with a DWT unit
+//! (e.g. the makerdiary nRF52840 MDK).
 
 // Raspberry Pi 0/4 and host dev machines run under Linux/macOS/Windows
-// and get `std`. ESP32 and AVR targets have no OS underneath this
-// crate, so it must stay `no_std` there.
+// and get `std`. ESP32, AVR, and bare-metal Cortex-M targets have no OS
+// underneath this crate, so it must stay `no_std` there.
 #![cfg_attr(
     not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
     no_std

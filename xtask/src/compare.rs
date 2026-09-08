@@ -135,16 +135,25 @@ fn build_target(
         cmd_parts.push(triple.to_string());
     }
 
-    println!("[{}] {}", target.name, cmd_parts.join(" "));
+    let env_suffix: String = target
+        .env
+        .iter()
+        .map(|(k, v)| format!(" {k}={v}"))
+        .collect();
+    println!("[{}]{} {}", target.name, env_suffix, cmd_parts.join(" "));
     if dry_run {
         return Ok(());
     }
 
     let (program, rest) = cmd_parts.split_first().unwrap();
     Shell::change_dir(sh, workspace_root());
-    xshell::cmd!(sh, "{program} {rest...}")
-        .run()
-        .with_context(|| format!("building for target {}", target.name))?;
+    let mut cmd = xshell::cmd!(sh, "{program} {rest...}");
+    for (key, value) in target.env {
+        // e.g. AVR_MCU=atmega2560 for hil-arduino-mega2560, read by
+        // entropy-timer's build.rs to pick the right avr-gcc -mmcu flag.
+        cmd = cmd.env(key, value);
+    }
+    cmd.run().with_context(|| format!("building for target {}", target.name))?;
     Ok(())
 }
 
