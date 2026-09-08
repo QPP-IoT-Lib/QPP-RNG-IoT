@@ -65,6 +65,14 @@ jobs:
             toolchain: nightly
             build_std: core
             rustflags: -C target-cpu=atmega328p
+            # Explicit even though it's entropy-timer's build.rs default:
+            # the Build step's `env:` block sets AVR_MCU unconditionally
+            # from `matrix.avr_mcu` for every AVR row, and a matrix entry
+            # that omits the key gets AVR_MCU="" (present but empty, not
+            # absent) rather than skipping the export -- which used to
+            # produce a bare `-mmcu=` and fail. Every AVR row needs this
+            # set now, not just Mega's non-default MCU.
+            avr_mcu: atmega328p
             scope: rng-embedded
             apt_packages: "gcc-avr avr-libc"
             cc: avr-gcc
@@ -78,6 +86,7 @@ jobs:
             toolchain: nightly
             build_std: core
             rustflags: -C target-cpu=atmega328p
+            avr_mcu: atmega328p
             scope: rng-embedded
             apt_packages: "gcc-avr avr-libc"
             cc: avr-gcc

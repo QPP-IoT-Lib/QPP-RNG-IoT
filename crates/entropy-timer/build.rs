@@ -70,7 +70,17 @@ fn main() {
     // Arduino Mega 2560 (ATmega2560) needs AVR_MCU=atmega2560 set
     // explicitly since its register layout differs.
     if target_arch == "avr" {
-        let mcu = env::var("AVR_MCU").unwrap_or_else(|_| "atmega328p".to_string());
+        // `.ok().filter(|s| !s.is_empty())`, not a plain `unwrap_or_else`
+        // on `Err`: an *empty* AVR_MCU (present but set to "") must fall
+        // back too, not just an absent one. CI matrix templating (e.g.
+        // GitHub Actions' `${{ matrix.field }}` on a row that doesn't
+        // define `field`) commonly sets a variable to "" rather than
+        // omitting it, which previously produced a bare `-mmcu=` and a
+        // "missing device or architecture" error from avr-gcc.
+        let mcu = env::var("AVR_MCU")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "atmega328p".to_string());
         build.flag(format!("-mmcu={mcu}"));
     }
 
