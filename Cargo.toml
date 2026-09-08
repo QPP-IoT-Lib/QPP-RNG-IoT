@@ -22,7 +22,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.97.1"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourorg/qpp-rng"
+repository = "https://github.com/QPP-IoT-Lib/QPP-RNG-IoT"
 publish = false # flip on a per-crate basis once something is ready to ship
 
 # Centralized dependency versions. Member crates opt in with
