@@ -67,6 +67,7 @@ jobs:
             rustflags: -C target-cpu=atmega328p
             scope: rng-embedded
             apt_packages: "gcc-avr avr-libc"
+            cc: avr-gcc
 
           # Arduino Nano -- same ATmega328P as the Uno above, so the
           # same invocation applies (they differ in USB-serial bridge/
@@ -79,6 +80,7 @@ jobs:
             rustflags: -C target-cpu=atmega328p
             scope: rng-embedded
             apt_packages: "gcc-avr avr-libc"
+            cc: avr-gcc
 
           # Arduino Mega 2560 (ATmega2560) -- same avr-none target as
           # the Uno/Nano, but AVR_MCU=atmega2560 so entropy-timer's
@@ -93,6 +95,7 @@ jobs:
             avr_mcu: atmega2560
             scope: rng-embedded
             apt_packages: "gcc-avr avr-libc"
+            cc: avr-gcc
 
           # makerdiary nRF52840 MDK (Nordic nRF52840, Cortex-M4F).
           # Unlike AVR, thumbv7em-none-eabihf is a prebuilt-std Tier 2
