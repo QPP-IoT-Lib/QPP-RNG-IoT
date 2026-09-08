@@ -117,14 +117,29 @@ fn build_target(
     release: bool,
     dry_run: bool,
 ) -> anyhow::Result<()> {
-    let mut cmd_parts = vec!["cargo".to_string(), "build".to_string()];
+    let mut cmd_parts = vec!["cargo".to_string()];
+    // Targets with a `+nightly` toolchain override (currently just AVR's
+    // `-Z build-std`) need it as the token right after `cargo`.
+    if target.nightly {
+        cmd_parts.push("+nightly".to_string());
+    }
+    cmd_parts.push("build".to_string());
     cmd_parts.extend(["-p".into(), "qpp-rng-reference".into()]);
     cmd_parts.extend(["-p".into(), "qpp-rng-iot".into()]);
     if release {
         cmd_parts.push("--release".into());
     }
+    if let Some(build_std) = target.build_std {
+        cmd_parts.push(format!("-Z build-std={build_std}"));
+    }
     if let Some(triple) = target.triple {
-        if !dry_run && !is_target_installed(triple) {
+        // `build_std` targets (AVR's `avr-none`) are Tier 3 with no
+        // prebuilt component to `rustup target add` in the first place
+        // -- `-Z build-std` compiles core from the `rust-src` component
+        // instead, so `rustup target list --installed` never lists them
+        // even when the build would work fine. Only gate on that check
+        // for targets that actually ship a prebuilt std/core.
+        if target.build_std.is_none() && !dry_run && !is_target_installed(triple) {
             println!(
                 "skipping build for {} ({triple}): not installed (`rustup target add {triple}`)",
                 target.name
@@ -135,16 +150,35 @@ fn build_target(
         cmd_parts.push(triple.to_string());
     }
 
-    println!("[{}] {}", target.name, cmd_parts.join(" "));
+    let env_suffix: String = target
+        .env
+        .iter()
+        .map(|(k, v)| format!(" {k}={v}"))
+        .chain(
+            (!target.rustflags.is_empty())
+                .then(|| format!(" RUSTFLAGS={:?}", target.rustflags.join(" "))),
+        )
+        .collect();
+    println!("[{}]{} {}", target.name, env_suffix, cmd_parts.join(" "));
     if dry_run {
         return Ok(());
     }
 
     let (program, rest) = cmd_parts.split_first().unwrap();
     Shell::change_dir(sh, workspace_root());
-    xshell::cmd!(sh, "{program} {rest...}")
-        .run()
-        .with_context(|| format!("building for target {}", target.name))?;
+    let mut cmd = xshell::cmd!(sh, "{program} {rest...}");
+    if !target.rustflags.is_empty() {
+        // e.g. `-C target-cpu=atmega2560` for hil-arduino-mega2560 --
+        // `avr-none` is one generic target covering every AVR chip, so
+        // the specific MCU is selected here rather than via `--target`.
+        cmd = cmd.env("RUSTFLAGS", target.rustflags.join(" "));
+    }
+    for (key, value) in target.env {
+        // e.g. AVR_MCU=atmega2560 for hil-arduino-mega2560, read by
+        // entropy-timer's build.rs to pick the right avr-gcc -mmcu flag.
+        cmd = cmd.env(key, value);
+    }
+    cmd.run().with_context(|| format!("building for target {}", target.name))?;
     Ok(())
 }
 

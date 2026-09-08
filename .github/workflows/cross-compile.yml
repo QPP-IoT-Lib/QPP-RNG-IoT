@@ -1,0 +1,159 @@
+name: Cross-target compile checks
+
+# Compile-only sanity check for every board this workspace targets --
+# NOT a substitute for tests.yml's `cargo test`. Cross-compiled targets
+# here have no runner (no QEMU, no attached hardware -- see
+# `xtask::target_matrix`'s module doc for the same caveat applied to
+# the local `cargo xtask compare --target <name>` path this mirrors),
+# so all this can actually catch is "does it compile for that target's
+# ABI/word size/no_std surface", not "does it behave correctly there".
+# Real behavior still needs a hardware-in-the-loop run (`xtask hil-*`)
+# against the physical board.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cross-compile:
+    name: cargo build (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Raspberry Pi 4 Model B, 64-bit Raspberry Pi OS. A real Linux
+          # userspace target, so the whole workspace builds -- not just
+          # the embedded-safe crates -- matching entropy_timer's
+          # linux_arm64 (CNTVCT_EL0) backend.
+          - name: Raspberry Pi 4 Model B (aarch64-unknown-linux-gnu)
+            target: aarch64-unknown-linux-gnu
+            toolchain: stable
+            scope: workspace
+            apt_packages: gcc-aarch64-linux-gnu
+            cc: aarch64-linux-gnu-gcc
+
+          # Raspberry Pi 0, 32-bit Raspberry Pi OS (ARM1176JZF-S /
+          # ARMv6) -- also a full Linux userspace target. Matches
+          # entropy_timer's linux_arm32 backend, whose PMU cycle-counter
+          # probe always falls back to clock_gettime on this core (no
+          # PMU generation it recognizes), which is fine: that fallback
+          # is exercised at runtime, not at compile time.
+          - name: Raspberry Pi 0 (arm-unknown-linux-gnueabihf)
+            target: arm-unknown-linux-gnueabihf
+            toolchain: stable
+            scope: workspace
+            apt_packages: gcc-arm-linux-gnueabihf
+            cc: arm-linux-gnueabihf-gcc
+
+          # Arduino Uno (ATmega328P). Current rustc/LLVM ships one
+          # generic Tier 3 `avr-none` target with no prebuilt core, not
+          # a per-chip triple -- `-Z build-std=core` (needs nightly +
+          # the rust-src component) plus `-C target-cpu=atmega328p`
+          # selects the specific MCU. Scoped to the two crates
+          # entropy-timer's build.rs/variants::avr backend actually
+          # feeds (qpp-rng-reference, qpp-rng-iot): the rest of the
+          # workspace (test-harness/*, qpp-rng-firmware) uses std and
+          # was never meant to run on the MCU itself.
+          - name: Arduino Uno (ATmega328P)
+            target: avr-none
+            toolchain: nightly
+            build_std: core
+            rustflags: -C target-cpu=atmega328p
+            scope: rng-embedded
+            apt_packages: "gcc-avr avr-libc"
+
+          # Arduino Nano -- same ATmega328P as the Uno above, so the
+          # same invocation applies (they differ in USB-serial bridge/
+          # bootloader baud rate, not in anything that affects
+          # compilation).
+          - name: Arduino Nano (ATmega328P)
+            target: avr-none
+            toolchain: nightly
+            build_std: core
+            rustflags: -C target-cpu=atmega328p
+            scope: rng-embedded
+            apt_packages: "gcc-avr avr-libc"
+
+          # Arduino Mega 2560 (ATmega2560) -- same avr-none target as
+          # the Uno/Nano, but AVR_MCU=atmega2560 so entropy-timer's
+          # build.rs passes the right -mmcu to avr-gcc for the C shim,
+          # and -C target-cpu=atmega2560 so rustc/LLVM codegen the
+          # right instruction subset/memory layout for the Rust side.
+          - name: Arduino Mega 2560 (ATmega2560)
+            target: avr-none
+            toolchain: nightly
+            build_std: core
+            rustflags: -C target-cpu=atmega2560
+            avr_mcu: atmega2560
+            scope: rng-embedded
+            apt_packages: "gcc-avr avr-libc"
+
+          # makerdiary nRF52840 MDK (Nordic nRF52840, Cortex-M4F).
+          # Unlike AVR, thumbv7em-none-eabihf is a prebuilt-std Tier 2
+          # target, so plain stable rustc is enough -- no nightly, no
+          # build-std. Matches entropy_timer::variants::cortex_m's
+          # DWT->CYCCNT backend, which needs arm-none-eabi-gcc to
+          # compile its C shim.
+          - name: makerdiary nRF52840 MDK (thumbv7em-none-eabihf)
+            target: thumbv7em-none-eabihf
+            toolchain: stable
+            scope: rng-embedded
+            apt_packages: gcc-arm-none-eabi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (${{ matrix.toolchain }})
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          # avr-none has no prebuilt component to fetch this way at all
+          # (that's exactly why it needs `-Z build-std` below) -- only
+          # ask rustup for a target when there's a prebuilt one.
+          targets: ${{ matrix.build_std == '' && matrix.target || '' }}
+          components: ${{ matrix.build_std != '' && 'rust-src' || '' }}
+
+      - name: Install cross C toolchain
+        if: matrix.apt_packages != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.apt_packages }}
+
+      - name: Cache cargo registry/target
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.target }}-${{ matrix.rustflags }}
+
+      - name: Build
+        env:
+          RUSTFLAGS: ${{ matrix.rustflags }}
+          AVR_MCU: ${{ matrix.avr_mcu }}
+        run: |
+          set -eu
+
+          # Point cargo/cc-rs at the cross C compiler, when this target
+          # needs one, without hardcoding per-target env var names.
+          if [ -n "${{ matrix.cc }}" ]; then
+            target_us=$(echo "${{ matrix.target }}" | tr '-' '_')
+            target_upper=$(echo "$target_us" | tr '[:lower:]' '[:upper:]')
+            export "CC_${target_us}=${{ matrix.cc }}"
+            export "CARGO_TARGET_${target_upper}_LINKER=${{ matrix.cc }}"
+          fi
+
+          extra_args=""
+          if [ -n "${{ matrix.build_std }}" ]; then
+            extra_args="-Z build-std=${{ matrix.build_std }}"
+          fi
+
+          if [ "${{ matrix.scope }}" = "workspace" ]; then
+            cargo build --workspace --target ${{ matrix.target }} $extra_args --verbose
+          else
+            cargo build -p qpp-rng-reference -p qpp-rng-iot --target ${{ matrix.target }} $extra_args --verbose
+          fi

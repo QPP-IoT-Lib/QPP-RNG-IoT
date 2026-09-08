@@ -15,9 +15,10 @@
 //! | macOS, Apple silicon (aarch64)   | `mach_absolute_time()` |
 //! | Linux/macOS, x86 or x86_64       | `RDTSC` (invariant-TSC gated, else falls back at runtime) |
 //! | Linux, aarch64                   | `CNTVCT_EL0` |
-//! | Linux, 32-bit ARM                | PMU cycle counter (falls back to `clock_gettime` at runtime if userspace access isn't granted) |
+//! | Linux, 32-bit ARM (e.g. Raspberry Pi 0/4 32-bit) | PMU cycle counter (falls back to `clock_gettime` at runtime if userspace access isn't granted, which includes every ARMv6 core such as the Pi 0's) |
 //! | ESP32 (Xtensa)                   | `CCOUNT` cycle-counter register |
-//! | Arduino Uno/Nano (AVR)           | free-running Timer1 |
+//! | Arduino Uno/Nano/Mega 2560 (AVR) | free-running Timer1 |
+//! | Bare-metal Cortex-M with a DWT unit (e.g. nRF52840 / makerdiary MDK) | `DWT->CYCCNT` cycle counter |
 //! | any other Unix-like target       | `clock_gettime(CLOCK_MONOTONIC)` |
 
 use std::env;
@@ -44,6 +45,8 @@ fn main() {
             "c/esp32_timer.c"
         } else if target_arch == "avr" {
             "c/avr_timer.c"
+        } else if target_arch == "arm" && target_os == "none" {
+            "c/cortex_m_dwt.c"
         } else if target_family == "unix" {
             "c/posix_timer.c"
         } else {
@@ -63,7 +66,9 @@ fn main() {
 
     // avr-gcc needs -mmcu to select register/interrupt-vector layout.
     // arduino-hal-style build setups export this. Default to the
-    // ATmega328P used by both the Uno and the Nano when unset.
+    // ATmega328P used by both the Uno and the Nano when unset; the
+    // Arduino Mega 2560 (ATmega2560) needs AVR_MCU=atmega2560 set
+    // explicitly since its register layout differs.
     if target_arch == "avr" {
         let mcu = env::var("AVR_MCU").unwrap_or_else(|_| "atmega328p".to_string());
         build.flag(format!("-mmcu={mcu}"));

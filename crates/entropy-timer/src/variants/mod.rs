@@ -53,6 +53,14 @@ mod avr;
 #[cfg(target_arch = "avr")]
 pub use avr::AvrTimer as PlatformTimer;
 
+// Bare-metal Cortex-M (e.g. the Nordic nRF52840 on the makerdiary
+// nRF52840 MDK): no OS underneath, identified by target_os == "none"
+// rather than by a specific vendor/board cfg.
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+mod cortex_m;
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+pub use cortex_m::CortexMTimer as PlatformTimer;
+
 // Generic Unix-like fallback: anything covered by none of the more
 // specific backends above (e.g. Linux on riscv64/mips/powerpc, a BSD).
 #[cfg(all(
