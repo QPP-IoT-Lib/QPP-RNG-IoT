@@ -1,0 +1,2 @@
+# Intel HEX files are checksummed byte-for-byte (SHA256SUMS): keep their CRLFs untouched
+hil-firmware/portable/*.hex -text
