@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build + flash one HIL firmware mode onto one board.
 #
-#   hil-firmware/run.sh <board> <mode>
+#   hil-firmware/tools/run.sh <board> <mode>
 #     board: mega2560 | nano | nrf52840
 #     mode:  ref | rawsrc | iot
 #
@@ -10,7 +10,7 @@
 # MEGA_PORT / NANO_PORT if yours differ.
 set -euo pipefail
 
-here="$(cd "$(dirname "$0")" && pwd)"
+here="$(cd "$(dirname "$0")/.." && pwd)"   # hil-firmware/
 board="$1"
 mode="$2"
 

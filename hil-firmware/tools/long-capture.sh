@@ -3,7 +3,7 @@
 # (for a >= 1 M-sample SP 800-90B non-IID assessment), then the IoT
 # generator's output (towards >= 1 MB for the IID track and SP 800-22).
 #
-#   hil-firmware/long-capture.sh <mega2560 | nano | nrf52840>
+#   hil-firmware/tools/long-capture.sh <mega2560 | nano | nrf52840>
 #
 # Writes hil-results/long/<board>-{rawsrc,iot}.{bin,meta} incrementally
 # (`status=running` in the .meta until each phase ends) and logs to
@@ -12,8 +12,8 @@
 # hil-results/long/<board>.pid); data captured so far is kept.
 set -uo pipefail
 
-here="$(cd "$(dirname "$0")" && pwd)"
-out_dir="$here/../hil-results/long"
+here="$(cd "$(dirname "$0")" && pwd)"   # hil-firmware/tools/
+out_dir="$here/../../hil-results/long"
 board="$1"
 mkdir -p "$out_dir"
 echo $$ > "$out_dir/$board.pid"
@@ -58,7 +58,7 @@ capture() { # mode records timeout_seconds
       ;;
   esac
   log "capturing $records $mode records from $port"
-  uv run -q "$here/tools/capture.py" --port "$port" --records "$records" \
+  uv run -q "$here/capture.py" --port "$port" --records "$records" \
     --timeout "$timeout" ${reset[@]+"${reset[@]}"} --out "$out_dir/$board-$mode"
 }
 

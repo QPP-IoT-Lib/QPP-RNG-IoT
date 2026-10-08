@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Progress of the long captures started with long-capture.sh.
-#   hil-firmware/long-status.sh
+#   hil-firmware/tools/long-status.sh
 set -uo pipefail
-dir="$(cd "$(dirname "$0")/../hil-results/long" && pwd)"
+dir="$(cd "$(dirname "$0")/../../hil-results/long" && pwd)"
 for b in nrf52840 mega2560 nano; do
   pid=""
   [ -f "$dir/$b.pid" ] && pid="$(cat "$dir/$b.pid")"
