@@ -6,3 +6,5 @@ target/
 
 # OS
 .DS_Store
+# Output of hil-firmware/portable/run-chunk.sh
+hil-firmware/portable/out/

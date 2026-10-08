@@ -17,6 +17,7 @@ ATmega328P (`nano`), makerdiary nRF52840 MDK (`nrf52840`).
 |---|---|
 | `avr/` | firmware for the two Arduinos (Mega 2560, Nano); `-Z build-std=core` on nightly, avr-gcc for the C shims |
 | `nrf52840/` | firmware for the nRF52840 MDK (`thumbv7em-none-eabihf`, stable Rust) |
+| `common/` | `no_std` code both firmwares share: the UART record protocol and the whole `iot` run loop; boards supply their UART and jitter source |
 | `tools/` | host side: build/flash script, capture and analysis scripts (below) |
 | `portable/` | prebuilt Arduino IoT firmware plus a run script, for long runs on another machine |
 
@@ -59,6 +60,15 @@ python3 -c "import sys; sys.path.insert(0,'hil-firmware/tools'); import entropy;
 print(entropy.assess(list(open('hil-results/samples/nano-iot.bin','rb').read()[:20000])))"
 ```
 
+After any change to a firmware, to `common/` or to `qpp-rng-iot`, check
+the real board (a minute each; it flashes the `iot` firmware, captures
+twice across a reset, and checks header, framing and that the two
+outputs differ):
+
+```bash
+hil-firmware/tools/smoke.sh nano        # also: mega2560, nrf52840
+```
+
 Long unattended runs (a raw-source phase, then an output phase, per
 board), with progress and ETA:
 
@@ -67,9 +77,9 @@ caffeinate -ims hil-firmware/tools/long-capture.sh nrf52840     # also: mega2560
 hil-firmware/tools/long-status.sh
 ```
 
-Ports are set in `tools/run.sh` and `tools/long-capture.sh` (override
-with `MEGA_PORT` / `NANO_PORT`). The nRF's port is whichever `usbmodem`
-device isn't the Mega.
+Serial ports and the nRF reset command are in `tools/boards.sh`
+(override with `MEGA_PORT` / `NANO_PORT`). The nRF's port is whichever
+`usbmodem` device isn't the Mega.
 
 ## Tooling needed
 

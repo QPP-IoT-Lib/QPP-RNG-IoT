@@ -5,9 +5,7 @@
 #     board: mega2560 | nano | nrf52840
 #     mode:  ref | rawsrc | iot
 #
-# Ports/programmers below match the bench setup these results were
-# recorded on (see hil-results/REPORT.md); override with env vars
-# MEGA_PORT / NANO_PORT if yours differ.
+# Ports come from boards.sh (override with MEGA_PORT / NANO_PORT).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")/.." && pwd)"   # hil-firmware/
@@ -21,8 +19,7 @@ case "$mode" in
   *) echo "unknown mode $mode" >&2; exit 2 ;;
 esac
 
-MEGA_PORT="${MEGA_PORT:-/dev/cu.usbmodem11201}"
-NANO_PORT="${NANO_PORT:-/dev/cu.usbserial-AB0LRIQV}"
+. "$(dirname "$0")/boards.sh"
 AVR_GCC_BIN="${AVR_GCC_BIN:-$(brew --prefix avr-gcc@14 2>/dev/null)/bin}"
 
 case "$board" in

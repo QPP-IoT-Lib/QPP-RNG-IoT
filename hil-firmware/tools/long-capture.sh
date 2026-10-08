@@ -18,8 +18,7 @@ board="$1"
 mkdir -p "$out_dir"
 echo $$ > "$out_dir/$board.pid"
 
-MEGA_PORT="${MEGA_PORT:-/dev/cu.usbmodem11201}"
-NANO_PORT="${NANO_PORT:-/dev/cu.usbserial-AB0LRIQV}"
+. "$here/boards.sh"
 
 # 1,000,001 raw records = 1 M jitter deltas (the first record has no
 # predecessor); 250,000 IoT records = 1,000,000 output bytes.
@@ -27,15 +26,6 @@ RAW_RECORDS=1000001
 IOT_RECORDS=250000
 
 log() { echo "[$(date '+%F %T')] $*"; }
-
-# The nRF52840 MDK's DAPLink has dropped off USB mid-operation before
-# and comes back on a new port, so resolve its port each time instead
-# of hardcoding it: the usbmodem device that isn't the Mega.
-nrf_port() {
-  for p in /dev/cu.usbmodem*; do
-    [ "$p" != "$MEGA_PORT" ] && { echo "$p"; return; }
-  done
-}
 
 retry() {
   local tries=$1; shift
@@ -49,14 +39,9 @@ retry() {
 
 capture() { # mode records timeout_seconds
   local mode=$1 records=$2 timeout=$3 port reset=()
-  case "$board" in
-    mega2560) port="$MEGA_PORT" ;;
-    nano) port="$NANO_PORT" ;;
-    nrf52840)
-      port="$(nrf_port)"
-      reset=(--reset-cmd "for i in 1 2 3 4 5; do probe-rs reset --chip nRF52840_xxAA && exit 0; sleep 5; done; exit 1")
-      ;;
-  esac
+  port="$(port_for "$board")"
+  [ -n "$port" ] || { log "no serial port found for $board"; return 1; }
+  [ "$board" = nrf52840 ] && reset=(--reset-cmd "$NRF_RESET_CMD")
   log "capturing $records $mode records from $port"
   uv run -q "$here/capture.py" --port "$port" --records "$records" \
     --timeout "$timeout" ${reset[@]+"${reset[@]}"} --out "$out_dir/$board-$mode"
