@@ -13,6 +13,7 @@ publish = false
 [dependencies]
 rand_core = { version = "0.10.1", default-features = false }
 entropy-timer = { path = "../../crates/entropy-timer" }
+qpp-hil-common = { path = "../common" }
 qpp-rng-reference = { path = "../../crates/qpp-rng-reference" }
 qpp-rng-iot = { path = "../../crates/qpp-rng-iot", optional = true }
 rng-core = { path = "../../crates/rng-core" }
@@ -27,7 +28,7 @@ default = []
 rawsrc = []
 # Stream the IoT variant's output instead of the reference
 # convergence-cycle trace.
-iot = ["dep:qpp-rng-iot"]
+iot = ["dep:qpp-rng-iot", "qpp-hil-common/iot"]
 
 [[bin]]
 name = "qpp-hil-avr"

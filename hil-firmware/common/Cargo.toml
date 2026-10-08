@@ -1,0 +1,20 @@
+[package]
+name = "qpp-hil-common"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Code shared by the avr/ and nrf52840/ HIL firmware: the UART record
+# protocol and the `iot` run loop. Board-specific pieces (UART registers,
+# jitter sources, reference/rawsrc modes) stay in each firmware.
+
+[dependencies]
+entropy-timer = { path = "../../crates/entropy-timer" }
+qpp-rng-iot = { path = "../../crates/qpp-rng-iot", optional = true }
+
+[features]
+iot = ["dep:qpp-rng-iot"]
+
+# Own workspace: this crate is only ever built as a dependency of the
+# firmware workspaces, never from the root workspace.
+[workspace]

@@ -81,37 +81,22 @@ fn uart_write(b: u8) {
     }
 }
 
+/// This board's UART, as the byte sink the shared protocol code writes to.
+struct Uart0;
+
+impl qpp_hil_common::Uart for Uart0 {
+    fn write(byte: u8) {
+        uart_write(byte);
+    }
+}
+
 fn uart_str(s: &str) {
-    for b in s.bytes() {
-        uart_write(b);
-    }
+    qpp_hil_common::write_str::<Uart0>(s);
 }
 
-#[cfg(feature = "iot")]
-fn uart_dec(mut v: u32) {
-    let mut buf = [0u8; 10];
-    let mut i = buf.len();
-    loop {
-        i -= 1;
-        buf[i] = b'0' + (v % 10) as u8;
-        v /= 10;
-        if v == 0 {
-            break;
-        }
-    }
-    for &b in &buf[i..] {
-        uart_write(b);
-    }
-}
-
+#[cfg(not(feature = "iot"))]
 fn record(a: u32, b: u32) {
-    uart_write(0xA5);
-    for x in a.to_le_bytes() {
-        uart_write(x);
-    }
-    for x in b.to_le_bytes() {
-        uart_write(x);
-    }
+    qpp_hil_common::record::<Uart0>(a, b);
 }
 
 #[entry]
@@ -273,56 +258,16 @@ impl qpp_rng_iot::JitterSource for HwRng {
 const CREDITED_BITS: u8 = 4;
 
 #[cfg(feature = "iot")]
-struct Synthetic(u32);
-
-#[cfg(feature = "iot")]
-impl qpp_rng_iot::JitterSource for Synthetic {
-    fn sample(&mut self) -> u32 {
-        self.0 ^= self.0 << 13;
-        self.0 ^= self.0 >> 17;
-        self.0 ^= self.0 << 5;
-        self.0
-    }
-}
-
-#[cfg(feature = "iot")]
 fn run_iot() -> ! {
-    use entropy_timer::{HighResTimer, PlatformTimer};
-    let mut clock = PlatformTimer;
-    clock.init();
-
-    const BENCH_BYTES: u32 = 256;
-    let mut bench = qpp_rng_iot::QppRngIot::<_>::new(Synthetic(0x1234_5678), CREDITED_BITS);
-    let _ = bench.next_byte();
-    let t0 = clock.tick() as u32;
-    for _ in 0..BENCH_BYTES {
-        let _ = core::hint::black_box(bench.next_byte());
-    }
-    let compute_cycles_per_byte = (clock.tick() as u32).wrapping_sub(t0) / BENCH_BYTES;
-
-    let mut rng = qpp_rng_iot::QppRngIot::<_>::new(HwRng::new(), CREDITED_BITS);
-    uart_str("QPPHIL nrf52840 iot-hwrng N=6 credit=");
-    uart_dec(CREDITED_BITS as u32);
-    uart_str(" samples_per_byte=");
-    uart_dec(rng.samples_per_byte() as u32);
-    uart_str(" compute_cycles_per_byte=");
-    uart_dec(compute_cycles_per_byte);
-    uart_str("\n");
-    loop {
-        let t0 = clock.tick() as u32;
-        let mut w = [0u8; 4];
-        for b in w.iter_mut() {
-            match rng.next_byte() {
-                Ok(v) => *b = v,
-                Err(_) => {
-                    uart_str("HEALTH-FAIL\n");
-                    loop {}
-                }
-            }
-        }
-        let t1 = clock.tick() as u32;
-        record(u32::from_le_bytes(w), t1.wrapping_sub(t0));
-    }
+    qpp_hil_common::run_iot::<Uart0, _, _>(
+        entropy_timer::PlatformTimer,
+        qpp_hil_common::IotConfig {
+            header: "QPPHIL nrf52840 iot-hwrng N=6 credit=",
+            credited_bits: CREDITED_BITS,
+            bench_bytes: 256,
+        },
+        HwRng::new,
+    )
 }
 
 #[panic_handler]

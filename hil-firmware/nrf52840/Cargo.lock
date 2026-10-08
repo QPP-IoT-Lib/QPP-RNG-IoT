@@ -55,11 +55,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "qpp-hil-common"
+version = "0.1.0"
+dependencies = [
+ "entropy-timer",
+ "qpp-rng-iot",
+]
+
+[[package]]
 name = "qpp-hil-nrf52840"
 version = "0.1.0"
 dependencies = [
  "cortex-m-rt",
  "entropy-timer",
+ "qpp-hil-common",
  "qpp-rng-iot",
  "qpp-rng-reference",
  "rand_core",

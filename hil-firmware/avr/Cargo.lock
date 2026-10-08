@@ -31,10 +31,19 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "entropy-timer",
+ "qpp-hil-common",
  "qpp-rng-iot",
  "qpp-rng-reference",
  "rand_core",
  "rng-core",
+]
+
+[[package]]
+name = "qpp-hil-common"
+version = "0.1.0"
+dependencies = [
+ "entropy-timer",
+ "qpp-rng-iot",
 ]
 
 [[package]]
