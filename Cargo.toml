@@ -15,7 +15,7 @@ members = [
     "crates/test-harness/report",
 ]
 # xtask is a separate workspace to decouple the testing
-exclude = ["xtask"]
+exclude = ["xtask", "hil-firmware"]
 
 [workspace.package]
 version = "0.1.0"

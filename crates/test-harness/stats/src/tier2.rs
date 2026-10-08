@@ -269,6 +269,37 @@ pub struct Sp80090bResult {
     pub min_entropy_bits_per_symbol: Option<f64>,
     pub h_original: Option<f64>,
     pub h_bitstring: Option<f64>,
+    /// IID track only: whether every IID hypothesis test passed
+    /// (`ea_iid`'s `** Passed ...` / `** Failed ...` verdict lines).
+    /// `Some(false)` means the IID assumption was rejected, so this
+    /// track's min-entropy must not be used (SP 800-90B §5); `None` for
+    /// the non-IID track, or if no verdict line was found.
+    #[serde(default)]
+    pub iid_tests_passed: Option<bool>,
+}
+
+/// `Some(false)` if any `** Failed` verdict line is present, `Some(true)`
+/// if there are verdict lines and all say `** Passed`, `None` if there
+/// are none.
+fn parse_iid_verdict(stdout: &str) -> Option<bool> {
+    let verdicts: Vec<bool> = stdout
+        .lines()
+        .filter_map(|l| {
+            let l = l.trim_start();
+            if l.starts_with("** Failed") {
+                Some(false)
+            } else if l.starts_with("** Passed") {
+                Some(true)
+            } else {
+                None
+            }
+        })
+        .collect();
+    if verdicts.is_empty() {
+        None
+    } else {
+        Some(verdicts.iter().all(|&v| v))
+    }
 }
 
 /// Runs the SP 800-90B reference tool's IID or non-IID track over
@@ -309,6 +340,10 @@ pub fn run_sp800_90b(
             .next_back(),
         h_original: raw_metrics.get("H_original").copied(),
         h_bitstring: raw_metrics.get("H_bitstring").copied(),
+        iid_tests_passed: match track {
+            Sp80090bTrack::Iid => parse_iid_verdict(&raw_stdout),
+            Sp80090bTrack::NonIid => None,
+        },
     });
 
     Ok(ToolRun {
@@ -609,6 +644,24 @@ fn parse_sts_final_report(report: &str) -> Option<Sp80022Result> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn iid_verdict_fails_if_any_test_failed() {
+        // Verbatim shape of a real `ea_iid` run on 10 kB of output.
+        let out = "\nH_original: 6.906056\n** Failed chi square tests\n\n\
+                   ** Passed length of longest repeated substring test\n\n\
+                   ** Passed IID permutation tests\n";
+        assert_eq!(parse_iid_verdict(out), Some(false));
+    }
+
+    #[test]
+    fn iid_verdict_passes_only_if_all_passed() {
+        let out = "** Passed chi square tests\n** Passed length of longest repeated substring test\n\
+                   ** Passed IID permutation tests\n";
+        assert_eq!(parse_iid_verdict(out), Some(true));
+        assert_eq!(parse_iid_verdict("H_original: 7.0\n"), None);
+    }
+
     use super::*;
 
     const SAMPLE_ENT_OUTPUT: &str = "\

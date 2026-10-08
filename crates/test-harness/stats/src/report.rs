@@ -29,7 +29,8 @@ pub struct StatReport {
 impl StatReport {
     /// The single most conservative min-entropy estimate available:
     /// SP 800-90B's non-IID track if it ran and parsed, else the IID
-    /// track, else `None` if neither tool was available/parseable.
+    /// track -- but only if its IID tests didn't fail, since a rejected
+    /// IID assumption invalidates that track's estimate -- else `None`.
     /// Non-IID is preferred when both exist because it makes no
     /// independence assumption -- see `qpp-rng-testing-architecture.md`
     /// §2's row on the non-IID track being the IID assumption's
@@ -43,6 +44,7 @@ impl StatReport {
                 self.sp800_90b_iid
                     .as_ref()
                     .and_then(|t| t.parsed.as_ref())
+                    .filter(|p| p.iid_tests_passed != Some(false))
                     .and_then(|p| p.min_entropy_bits_per_symbol)
             })
     }
@@ -162,6 +164,42 @@ pub fn run_full_battery(
 
 #[cfg(test)]
 mod tests {
+    use crate::tier2::{Sp80090bResult, Sp80090bTrack, ToolRun};
+
+    fn iid_run(min: f64, passed: Option<bool>) -> ToolRun<Sp80090bResult> {
+        ToolRun {
+            tool_path: Some("ea_iid".into()),
+            raw_stdout: String::new(),
+            raw_stderr: String::new(),
+            exit_success: true,
+            raw_metrics: Default::default(),
+            parsed: Some(Sp80090bResult {
+                track: Sp80090bTrack::Iid,
+                min_entropy_bits_per_symbol: Some(min),
+                h_original: Some(min),
+                h_bitstring: None,
+                iid_tests_passed: passed,
+            }),
+        }
+    }
+
+    #[test]
+    fn failed_iid_track_is_not_used_as_min_entropy_fallback() {
+        let mut report = StatReport {
+            candidate: "c".into(),
+            sample_path: "p".into(),
+            sample_len_bytes: 10,
+            tier1: tier1::run_tier1(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+            sp800_90b_iid: Some(iid_run(6.9, Some(false))),
+            sp800_90b_non_iid: None,
+            sp800_22: None,
+            ent: None,
+        };
+        assert_eq!(report.min_entropy_estimate(), None);
+        report.sp800_90b_iid = Some(iid_run(6.9, Some(true)));
+        assert_eq!(report.min_entropy_estimate(), Some(6.9));
+    }
+
     use super::*;
 
     #[test]
