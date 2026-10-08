@@ -507,12 +507,21 @@ criterion's own binary, and (in `hil.rs`) talking to `probe-rs`.
 
 - Raw candidates carry a real, structural MSB bias (§3) -- always
   condition before using QPP-RNG output as key material.
-- Nothing has been validated on anything but this one host machine.
-  Timing-jitter entropy is platform-sensitive by nature (see
-  `qpp-rng-reference`'s own documented near-failure on a Windows
-  desktop's `QueryPerformanceCounter`), and no hardware-in-loop run has
-  happened yet.
-- `qpp-rng-iot` is still the literal `cargo new` stub.
+- The harness above only ever runs on the host. Timing-jitter entropy
+  is platform-sensitive by nature (see `qpp-rng-reference`'s own
+  documented near-failure on a Windows desktop's
+  `QueryPerformanceCounter`), and it fails completely on bare-metal
+  MCUs: on an Arduino Mega 2560, an Arduino Nano and an nRF52840, the
+  reference generator's output is bit-for-bit identical after every
+  reset, yet passes Tier 1 and the NIST tests. That was found with the
+  separate firmware and tools in `hil-firmware/` (not with `xtask`'s
+  `hil.rs`, which has still not been run); results are in
+  `hil-results/REPORT.md`.
+- `qpp-rng-iot` is implemented (an independent-oscillator jitter source,
+  SP 800-90B health tests, a cheaper pad generator) but is not in
+  `candidates`/`cargo xtask compare`: its entropy only exists on
+  hardware, so a host-side candidate would measure a mock source. It is
+  tested on the boards via `hil-firmware/` instead.
 - `cargo call-stack` and the manual stack high-water-mark technique
   both need real embedded firmware to produce anything at all.
 - `.text` size is page-aligned and thus identical across binaries on
