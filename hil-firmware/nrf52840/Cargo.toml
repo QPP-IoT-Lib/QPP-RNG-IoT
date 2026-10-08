@@ -1,0 +1,45 @@
+[package]
+name = "qpp-hil-nrf52840"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Hardware-in-the-loop firmware for the makerdiary nRF52840 MDK
+# (Cortex-M4F). Own workspace for the same reason as ../avr.
+
+[dependencies]
+cortex-m-rt = "0.7.5"
+rand_core = { version = "0.10.1", default-features = false }
+entropy-timer = { path = "../../crates/entropy-timer" }
+qpp-rng-reference = { path = "../../crates/qpp-rng-reference" }
+qpp-rng-iot = { path = "../../crates/qpp-rng-iot", optional = true }
+rng-core = { path = "../../crates/rng-core" }
+
+[features]
+default = []
+# Stream raw jitter-source samples (LFRC-clocked RTC vs. DWT->CYCCNT,
+# plus the on-chip RNG peripheral as a comparison baseline).
+rawsrc = []
+# Stream the IoT variant's output.
+iot = ["dep:qpp-rng-iot"]
+
+[[bin]]
+name = "qpp-hil-nrf52840"
+path = "src/main.rs"
+test = false
+bench = false
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = true
+
+[profile.release.package.qpp-rng-reference]
+opt-level = 0
+
+[profile.release.package.entropy-timer]
+opt-level = 0
+
+[workspace]

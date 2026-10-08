@@ -1,0 +1,11 @@
+[build]
+target = "thumbv7em-none-eabihf"
+
+[target.thumbv7em-none-eabihf]
+rustflags = ["-C", "link-arg=-Tlink.x"]
+
+# entropy-timer's build.rs compiles c/cortex_m_dwt.c; it only needs
+# <stdint.h>, so Apple/LLVM clang works as the cross compiler and no
+# arm-none-eabi-gcc install is required.
+[env]
+CC_thumbv7em_none_eabihf = "clang"

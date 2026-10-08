@@ -1,0 +1,59 @@
+[package]
+name = "qpp-hil-avr"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Hardware-in-the-loop firmware for the Arduino Nano/Uno (ATmega328P)
+# and Arduino Mega 2560 (ATmega2560). Its own workspace (the root
+# workspace `exclude`s `hil-firmware`), because it only ever builds for
+# `avr-none` with `-Z build-std=core`, which `cargo test --workspace`
+# on the host could never do.
+
+[dependencies]
+rand_core = { version = "0.10.1", default-features = false }
+entropy-timer = { path = "../../crates/entropy-timer" }
+qpp-rng-reference = { path = "../../crates/qpp-rng-reference" }
+qpp-rng-iot = { path = "../../crates/qpp-rng-iot", optional = true }
+rng-core = { path = "../../crates/rng-core" }
+
+[build-dependencies]
+cc = "1.2"
+
+[features]
+default = []
+# Stream raw cross-clock jitter samples (watchdog RC oscillator vs.
+# Timer1) instead of the reference convergence-cycle trace.
+rawsrc = []
+# Stream the IoT variant's output instead of the reference
+# convergence-cycle trace.
+iot = ["dep:qpp-rng-iot"]
+
+[[bin]]
+name = "qpp-hil-avr"
+path = "src/main.rs"
+test = false
+bench = false
+
+[profile.dev]
+panic = "abort"
+opt-level = "s"
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = true
+
+# Same pins as the root workspace: the reference generator's
+# convergence-loop timing is its entropy source, so keep it at the
+# paper-mandated -O0 on hardware too.
+[profile.release.package.qpp-rng-reference]
+opt-level = 0
+
+[profile.release.package.entropy-timer]
+opt-level = 0
+
+[workspace]
+

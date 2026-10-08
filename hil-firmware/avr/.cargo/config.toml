@@ -1,0 +1,8 @@
+[build]
+target = "avr-none"
+
+[unstable]
+build-std = ["core"]
+
+# CPU and AVR_MCU are set per board by hil-firmware/run.sh, e.g.
+#   RUSTFLAGS="-C target-cpu=atmega2560" AVR_MCU=atmega2560 cargo +nightly build --release
