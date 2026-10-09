@@ -1,0 +1,16 @@
+[2026-10-08 10:20:20] long capture starting on mega2560
+[2026-10-08 10:20:20] === phase rawsrc: flashing
+warning: unused dependency `qpp-rng-reference`
+  --> Cargo.toml:16:1
+   |
+16 | qpp-rng-reference = { path = "../../crates/qpp-rng-reference" }
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `cargo::unused_dependencies` is set to `warn` by default
+help: consider removing the dependency on `qpp-rng-reference`
+warning: `qpp-hil-avr` (manifest) generated 1 warning
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.05s
+   text	   data	    bss	    dec	    hex	filename
+   1664	      0	     68	   1732	    6c4	target/atmega2560/avr-none/release/qpp-hil-avr.elf
+[2026-10-08 10:20:21] capturing 1000001 rawsrc records from /dev/cu.usbmodem11201
+/Users/adrianv/adrian-dev/uni/2026-20/thesis-project/qpp-iot-lib/qpp-rng/hil-firmware/../hil-results/long/mega2560-rawsrc: 1000001 records, header='QPPHIL avr rawsrc wdt-vs-timer1', bad_sync=0, 16980.8s, complete

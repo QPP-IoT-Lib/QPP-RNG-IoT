@@ -1,0 +1,5 @@
+header=QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233
+records=10
+bad_sync_bytes=0
+seconds=4.788
+records_per_second=1.880

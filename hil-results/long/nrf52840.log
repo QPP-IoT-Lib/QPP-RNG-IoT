@@ -1,0 +1,21 @@
+[2026-10-08 10:16:14] long capture starting on nrf52840
+[2026-10-08 10:16:14] === phase rawsrc: flashing
+   Compiling qpp-hil-nrf52840 v0.1.0 (/Users/adrianv/adrian-dev/uni/2026-20/thesis-project/qpp-iot-lib/qpp-rng/hil-firmware/nrf52840)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.23s
+   text	   data	    bss	    dec	    hex	filename
+   1668	      0	      0	   1668	    684	target/thumbv7em-none-eabihf/release/qpp-hil-nrf52840
+     [38;5;10m[1mFinished[0m in 0.99s
+[2026-10-08 10:16:15] capturing 1000001 rawsrc records from /dev/cu.usbmodem21102
+/Users/adrianv/adrian-dev/uni/2026-20/thesis-project/qpp-iot-lib/qpp-rng/hil-firmware/../hil-results/long/nrf52840-rawsrc: 1000001 records, header='QPPHIL nrf52840 rawsrc lfrc-rtc32-vs-cyccnt+hwrng', bad_sync=0, 1741.8s, complete
+[2026-10-08 10:45:18] phase rawsrc ended: records=1000001 status=complete 
+[2026-10-08 10:45:18] === phase iot: flashing
+   Compiling qpp-rng-iot v0.1.0 (/Users/adrianv/adrian-dev/uni/2026-20/thesis-project/qpp-iot-lib/qpp-rng/crates/qpp-rng-iot)
+   Compiling qpp-hil-nrf52840 v0.1.0 (/Users/adrianv/adrian-dev/uni/2026-20/thesis-project/qpp-iot-lib/qpp-rng/hil-firmware/nrf52840)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.32s
+   text	   data	    bss	    dec	    hex	filename
+   2940	      0	      0	   2940	    b7c	target/thumbv7em-none-eabihf/release/qpp-hil-nrf52840
+     [38;5;10m[1mFinished[0m in 0.97s
+[2026-10-08 10:45:19] capturing 250000 iot records from /dev/cu.usbmodem21102
+/Users/adrianv/adrian-dev/uni/2026-20/thesis-project/qpp-iot-lib/qpp-rng/hil-firmware/../hil-results/long/nrf52840-iot: 250000 records, header='QPPHIL nrf52840 iot-hwrng N=6 credit=4 samples_per_byte=4 compute_cycles_per_byte=680405', bad_sync=0, 9892.2s, complete
+[2026-10-08 13:30:15] phase iot ended: records=250000 status=complete 
+[2026-10-08 13:30:15] all phases done on nrf52840

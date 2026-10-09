@@ -1,0 +1,109 @@
+[
+  {
+    "candidate": "nrf52840-iot-1MB",
+    "sample_path": "/Users/adrianv/.claude/jobs/aa4f0ffa/tmp/nrf-full/nrf52840-iot-1MB.bin",
+    "sample_len_bytes": 1000000,
+    "tier1": {
+      "n_bytes": 1000000,
+      "monobit": {
+        "statistic": 0.8902474375138633,
+        "p_value": 0.3733330419240991,
+        "pass": true
+      },
+      "runs": {
+        "statistic": 3999278.0,
+        "p_value": 0.609875622723504,
+        "pass": true
+      },
+      "chi_square": {
+        "statistic": 254.34521600000002,
+        "p_value": 0.4997952673915682,
+        "pass": true
+      },
+      "serial_correlation": {
+        "statistic": 0.0008722638204530502,
+        "p_value": null,
+        "pass": true
+      },
+      "shannon_entropy_bits_per_byte": {
+        "statistic": 7.999816741695845,
+        "p_value": null,
+        "pass": true
+      }
+    },
+    "sp800_90b_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_iid",
+      "raw_stdout": "Calculating baseline statistics...\nH_original: 7.865804\nH_bitstring: 0.998233\nmin(H_original, 8 X H_bitstring): 7.865804\n** Passed chi square tests\n\n** Passed length of longest repeated substring test\n\n** Passed IID permutation tests\n\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "H_bitstring": 0.998233,
+        "H_original": 7.865804,
+        "min(H_original, 8 X H_bitstring)": 7.865804
+      },
+      "parsed": {
+        "track": "Iid",
+        "min_entropy_bits_per_symbol": 7.865804,
+        "h_original": 7.865804,
+        "h_bitstring": 0.998233,
+        "iid_tests_passed": true
+      }
+    },
+    "sp800_90b_non_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_non_iid",
+      "raw_stdout": "\nRunning non-IID tests...\n\nRunning Most Common Value Estimate...\n\nRunning Entropic Statistic Estimates (bit strings only)...\n\nRunning Tuple Estimates...\n\nRunning Predictor Estimates...\n\nH_original: 7.276950\nH_bitstring: 0.913310\nmin(H_original, 8 X H_bitstring): 7.276950\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "H_bitstring": 0.91331,
+        "H_original": 7.27695,
+        "min(H_original, 8 X H_bitstring)": 7.27695
+      },
+      "parsed": {
+        "track": "NonIid",
+        "min_entropy_bits_per_symbol": 7.27695,
+        "h_original": 7.27695,
+        "h_bitstring": 0.91331,
+        "iid_tests_passed": null
+      }
+    },
+    "sp800_22": {
+      "tool_path": "/Users/adrianv/adrian-software/sts-2.1.2/sts-2.1.2/assess",
+      "raw_stdout": "           G E N E R A T O R    S E L E C T I O N \n           ______________________________________\n\n    [0] Input File                 [1] Linear Congruential\n    [2] Quadratic Congruential I   [3] Quadratic Congruential II\n    [4] Cubic Congruential         [5] XOR\n    [6] Modular Exponentiation     [7] Blum-Blum-Shub\n    [8] Micali-Schnorr             [9] G Using SHA-1\n\n   Enter Choice: \n\n\t\tUser Prescribed Input File: \n                S T A T I S T I C A L   T E S T S\n                _________________________________\n\n    [01] Frequency                       [02] Block Frequency\n    [03] Cumulative Sums                 [04] Runs\n    [05] Longest Run of Ones             [06] Rank\n    [07] Discrete Fourier Transform      [08] Nonperiodic Template Matchings\n    [09] Overlapping Template Matchings  [10] Universal Statistical\n    [11] Approximate Entropy             [12] Random Excursions\n    [13] Random Excursions Variant       [14] Serial\n    [15] Linear Complexity\n\n         INSTRUCTIONS\n            Enter 0 if you DO NOT want to apply all of the\n            statistical tests to each sequence and 1 if you DO.\n\n   Enter Choice: \n        P a r a m e t e r   A d j u s t m e n t s\n        -----------------------------------------\n    [1] Block Frequency Test - block length(M):         128\n    [2] NonOverlapping Template Test - block length(m): 9\n    [3] Overlapping Template Test - block length(m):    9\n    [4] Approximate Entropy Test - block length(m):     10\n    [5] Serial Test - block length(m):                  16\n    [6] Linear Complexity Test - block length(M):       500\n\n   Select Test (0 to continue): \n   How many bitstreams? \n   Input File Format:\n    [0] ASCII - A sequence of ASCII 0's and 1's\n    [1] Binary - Each byte in data file contains 8 bits of data\n\n   Select input mode:  \n     Statistical Testing In Progress.........\n\n     Statistical Testing Complete!!!!!!!!!!!!\n\n",
+      "raw_stderr": "",
+      "exit_success": false,
+      "raw_metrics": {
+        "[1] Block Frequency Test - block length(M)": 128.0,
+        "[2] NonOverlapping Template Test - block length(m)": 9.0,
+        "[3] Overlapping Template Test - block length(m)": 9.0,
+        "[4] Approximate Entropy Test - block length(m)": 10.0,
+        "[5] Serial Test - block length(m)": 16.0,
+        "[6] Linear Complexity Test - block length(M)": 500.0
+      },
+      "parsed": {
+        "tests_passed": 1440,
+        "tests_total": 1452,
+        "pass_rate": 0.9917355
+      }
+    },
+    "ent": {
+      "tool_path": "/opt/homebrew/bin/ent",
+      "raw_stdout": "Entropy = 7.999817 bits per byte.\n\nOptimum compression would reduce the size\nof this 1000000 byte file by 0 percent.\n\nChi square distribution for 1000000 samples is 254.35, and randomly\nwould exceed this value 49.98 percent of the times.\n\nArithmetic mean value of data bytes is 127.5996 (127.5 = random).\nMonte Carlo value for Pi is 3.142308569 (error 0.02 percent).\nSerial correlation coefficient is 0.000872 (totally uncorrelated = 0.0).\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "Entropy": 7.999817,
+        "Serial correlation coefficient is 0.000872 (totally uncorrelated": 0.0
+      },
+      "parsed": {
+        "entropy_bits_per_byte": 7.999817,
+        "chi_square": 254.35,
+        "chi_square_exceed_percent": 49.98,
+        "arithmetic_mean": 127.5996,
+        "monte_carlo_pi": 3.142308569,
+        "monte_carlo_pi_error_percent": 0.02,
+        "serial_correlation": 0.000872
+      }
+    }
+  }
+]

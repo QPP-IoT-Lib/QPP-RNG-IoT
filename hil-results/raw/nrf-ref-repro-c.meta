@@ -1,0 +1,5 @@
+header=QPPHIL nrf52840 ref-xorshift128plus N=5
+records=2000
+bad_sync_bytes=0
+seconds=2.945
+records_per_second=678.772

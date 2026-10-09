@@ -1,0 +1,5 @@
+header=QPPHIL nrf52840 rawsrc lfrc-rtc32-vs-cyccnt+hwrng
+records=20000
+bad_sync_bytes=0
+seconds=34.845
+records_per_second=573.941

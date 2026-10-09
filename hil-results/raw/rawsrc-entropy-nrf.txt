@@ -1,0 +1,6 @@
+nrf lfrc-vs-cyccnt (32 LFRC ticks): n=19999 mean=111514.1 sd=36.96 diff-sd=51.06 lag1=-0.909 range=111440..111604 distinct=42
+  first 10 run a: [111516, 111472, 111560, 111456, 111560, 111468, 111528, 111484, 111556, 111480]
+  first 10 run b: [111452, 111528, 111468, 111544, 111496, 111540, 111464, 111568, 111476, 111564]
+  90B-subset low byte: {'mcv': 3.25, 't_tuple': 0.72, 'lag': 1.11, 'multi_mcw': 3.21, 'min': 0.72}
+  hwrng 90B-subset: {'mcv': 7.26, 't_tuple': 7.26, 'lag': 6.97, 'multi_mcw': 7.68, 'min': 6.97}
+  hwrng run a vs b same-position matches: 79 / 20000

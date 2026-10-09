@@ -1,0 +1,5 @@
+header=QPPHIL avr ref-xorshift128plus N=5
+records=300
+bad_sync_bytes=0
+seconds=10.415
+records_per_second=28.710

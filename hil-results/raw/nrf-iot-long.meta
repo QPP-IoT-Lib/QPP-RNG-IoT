@@ -1,0 +1,5 @@
+header=QPPHIL nrf52840 iot-hwrng N=6 credit=4 samples_per_byte=4 compute_cycles_per_byte=680405
+records=12500
+bad_sync_bytes=0
+seconds=494.600
+records_per_second=25.271

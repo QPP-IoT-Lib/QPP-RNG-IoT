@@ -1,0 +1,6 @@
+header=QPPHIL avr rawsrc wdt-vs-timer1
+records=1000001
+bad_sync_bytes=0
+seconds=16628.983
+records_per_second=60.136
+status=complete

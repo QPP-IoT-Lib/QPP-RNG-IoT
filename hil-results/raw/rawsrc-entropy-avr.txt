@@ -1,0 +1,5 @@
+mega wdt-vs-timer1: n=19999 mean=271513.7 ticks sd=18.26 diff-sd=10.74 lag1-autocorr=0.654 range=271439..271592
+   90B-subset (low byte): {'mcv': 3.53, 't_tuple': 2.14, 'lag': 3.46, 'multi_mcw': 3.38, 'min': 2.14}
+nano wdt-vs-timer1: n=19999 mean=265949.6 ticks sd=45.11 diff-sd=24.94 lag1-autocorr=0.694 range=265815..266040
+   90B-subset (low byte): {'mcv': 4.35, 't_tuple': 2.98, 'lag': 4.66, 'multi_mcw': 3.8, 'min': 2.98}
+nrf reference dt low byte (DETERMINISTIC across resets) n=2000: {'mcv': 4.93, 't_tuple': 4.93, 'lag': 5.78}

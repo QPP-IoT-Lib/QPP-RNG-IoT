@@ -1,0 +1,275 @@
+[
+  {
+    "candidate": "mega2560-iot",
+    "sample_path": "/Users/adrianv/.claude/jobs/aa4f0ffa/tmp/harness-in/mega2560-iot.bin",
+    "sample_len_bytes": 10000,
+    "tier1": {
+      "n_bytes": 10000,
+      "monobit": {
+        "statistic": 0.1131370849898476,
+        "p_value": 0.9099218325705067,
+        "pass": true
+      },
+      "runs": {
+        "statistic": 40108.0,
+        "p_value": 0.445033683490047,
+        "pass": true
+      },
+      "chi_square": {
+        "statistic": 277.4272000000001,
+        "p_value": 0.15994046619835872,
+        "pass": true
+      },
+      "serial_correlation": {
+        "statistic": -0.0025043849480146903,
+        "p_value": null,
+        "pass": true
+      },
+      "shannon_entropy_bits_per_byte": {
+        "statistic": 7.9799563340916135,
+        "p_value": null,
+        "pass": true
+      }
+    },
+    "sp800_90b_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_iid",
+      "raw_stdout": "\n*** Warning: data contains less than 1000000 samples ***\n\nCalculating baseline statistics...\nH_original: 6.906056\nH_bitstring: 0.986349\nmin(H_original, 8 X H_bitstring): 6.906056\n** Failed chi square tests\n\n** Passed length of longest repeated substring test\n\n** Passed IID permutation tests\n\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "*** Warning": 1000000.0,
+        "H_bitstring": 0.986349,
+        "H_original": 6.906056,
+        "min(H_original, 8 X H_bitstring)": 6.906056
+      },
+      "parsed": {
+        "track": "Iid",
+        "min_entropy_bits_per_symbol": 6.906056,
+        "h_original": 6.906056,
+        "h_bitstring": 0.986349,
+        "iid_tests_passed": false
+      }
+    },
+    "sp800_90b_non_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_non_iid",
+      "raw_stdout": "\n*** Warning: data contains less than 1000000 samples ***\n\n\nRunning non-IID tests...\n\nRunning Most Common Value Estimate...\n\nRunning Entropic Statistic Estimates (bit strings only)...\n\nRunning Tuple Estimates...\n\nRunning Predictor Estimates...\n\nH_original: 6.906056\nH_bitstring: 0.725961\nmin(H_original, 8 X H_bitstring): 5.807691\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "*** Warning": 1000000.0,
+        "H_bitstring": 0.725961,
+        "H_original": 6.906056,
+        "min(H_original, 8 X H_bitstring)": 5.807691
+      },
+      "parsed": {
+        "track": "NonIid",
+        "min_entropy_bits_per_symbol": 5.807691,
+        "h_original": 6.906056,
+        "h_bitstring": 0.725961,
+        "iid_tests_passed": null
+      }
+    },
+    "sp800_22": null,
+    "ent": {
+      "tool_path": "/opt/homebrew/bin/ent",
+      "raw_stdout": "Entropy = 7.979956 bits per byte.\n\nOptimum compression would reduce the size\nof this 10000 byte file by 0 percent.\n\nChi square distribution for 10000 samples is 277.43, and randomly\nwould exceed this value 15.99 percent of the times.\n\nArithmetic mean value of data bytes is 126.8723 (127.5 = random).\nMonte Carlo value for Pi is 3.133253301 (error 0.27 percent).\nSerial correlation coefficient is -0.002504 (totally uncorrelated = 0.0).\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "Entropy": 7.979956,
+        "Serial correlation coefficient is -0.002504 (totally uncorrelated": 0.0
+      },
+      "parsed": {
+        "entropy_bits_per_byte": 7.979956,
+        "chi_square": 277.43,
+        "chi_square_exceed_percent": 15.99,
+        "arithmetic_mean": 126.8723,
+        "monte_carlo_pi": 3.133253301,
+        "monte_carlo_pi_error_percent": 0.27,
+        "serial_correlation": -0.002504
+      }
+    }
+  },
+  {
+    "candidate": "nrf52840-iot",
+    "sample_path": "/Users/adrianv/.claude/jobs/aa4f0ffa/tmp/harness-in/nrf52840-iot.bin",
+    "sample_len_bytes": 50000,
+    "tier1": {
+      "n_bytes": 50000,
+      "monobit": {
+        "statistic": 1.375590782173245,
+        "p_value": 0.1689483692448116,
+        "pass": true
+      },
+      "runs": {
+        "statistic": 200080.0,
+        "p_value": 0.7979699186358545,
+        "pass": true
+      },
+      "chi_square": {
+        "statistic": 239.81567999999982,
+        "p_value": 0.7442575330046046,
+        "pass": true
+      },
+      "serial_correlation": {
+        "statistic": -0.0009937173425253517,
+        "p_value": null,
+        "pass": true
+      },
+      "shannon_entropy_bits_per_byte": {
+        "statistic": 7.9965096884910425,
+        "p_value": null,
+        "pass": true
+      }
+    },
+    "sp800_90b_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_iid",
+      "raw_stdout": "\n*** Warning: data contains less than 1000000 samples ***\n\nCalculating baseline statistics...\nH_original: 7.538313\nH_bitstring: 0.991014\nmin(H_original, 8 X H_bitstring): 7.538313\n** Passed chi square tests\n\n** Passed length of longest repeated substring test\n\n** Passed IID permutation tests\n\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "*** Warning": 1000000.0,
+        "H_bitstring": 0.991014,
+        "H_original": 7.538313,
+        "min(H_original, 8 X H_bitstring)": 7.538313
+      },
+      "parsed": {
+        "track": "Iid",
+        "min_entropy_bits_per_symbol": 7.538313,
+        "h_original": 7.538313,
+        "h_bitstring": 0.991014,
+        "iid_tests_passed": true
+      }
+    },
+    "sp800_90b_non_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_non_iid",
+      "raw_stdout": "\n*** Warning: data contains less than 1000000 samples ***\n\n\nRunning non-IID tests...\n\nRunning Most Common Value Estimate...\n\nRunning Entropic Statistic Estimates (bit strings only)...\n\nRunning Tuple Estimates...\n\nRunning Predictor Estimates...\n\nH_original: 7.411960\nH_bitstring: 0.808465\nmin(H_original, 8 X H_bitstring): 6.467717\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "*** Warning": 1000000.0,
+        "H_bitstring": 0.808465,
+        "H_original": 7.41196,
+        "min(H_original, 8 X H_bitstring)": 6.467717
+      },
+      "parsed": {
+        "track": "NonIid",
+        "min_entropy_bits_per_symbol": 6.467717,
+        "h_original": 7.41196,
+        "h_bitstring": 0.808465,
+        "iid_tests_passed": null
+      }
+    },
+    "sp800_22": null,
+    "ent": {
+      "tool_path": "/opt/homebrew/bin/ent",
+      "raw_stdout": "Entropy = 7.996510 bits per byte.\n\nOptimum compression would reduce the size\nof this 50000 byte file by 0 percent.\n\nChi square distribution for 50000 samples is 239.82, and randomly\nwould exceed this value 74.43 percent of the times.\n\nArithmetic mean value of data bytes is 127.5620 (127.5 = random).\nMonte Carlo value for Pi is 3.155646226 (error 0.45 percent).\nSerial correlation coefficient is -0.000994 (totally uncorrelated = 0.0).\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "Entropy": 7.99651,
+        "Serial correlation coefficient is -0.000994 (totally uncorrelated": 0.0
+      },
+      "parsed": {
+        "entropy_bits_per_byte": 7.99651,
+        "chi_square": 239.82,
+        "chi_square_exceed_percent": 74.43,
+        "arithmetic_mean": 127.562,
+        "monte_carlo_pi": 3.155646226,
+        "monte_carlo_pi_error_percent": 0.45,
+        "serial_correlation": -0.000994
+      }
+    }
+  },
+  {
+    "candidate": "nano-iot",
+    "sample_path": "/Users/adrianv/.claude/jobs/aa4f0ffa/tmp/harness-in/nano-iot.bin",
+    "sample_len_bytes": 10000,
+    "tier1": {
+      "n_bytes": 10000,
+      "monobit": {
+        "statistic": 0.16263455967290594,
+        "p_value": 0.8708061802288336,
+        "pass": true
+      },
+      "runs": {
+        "statistic": 40002.0,
+        "p_value": 0.9886419463976622,
+        "pass": true
+      },
+      "chi_square": {
+        "statistic": 243.48160000000038,
+        "p_value": 0.6873289038710264,
+        "pass": true
+      },
+      "serial_correlation": {
+        "statistic": -0.001971961661722129,
+        "p_value": null,
+        "pass": true
+      },
+      "shannon_entropy_bits_per_byte": {
+        "statistic": 7.982296193544843,
+        "p_value": null,
+        "pass": true
+      }
+    },
+    "sp800_90b_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_iid",
+      "raw_stdout": "\n*** Warning: data contains less than 1000000 samples ***\n\nCalculating baseline statistics...\nH_original: 7.054617\nH_bitstring: 0.986099\nmin(H_original, 8 X H_bitstring): 7.054617\n** Failed chi square tests\n\n** Passed length of longest repeated substring test\n\n** Passed IID permutation tests\n\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "*** Warning": 1000000.0,
+        "H_bitstring": 0.986099,
+        "H_original": 7.054617,
+        "min(H_original, 8 X H_bitstring)": 7.054617
+      },
+      "parsed": {
+        "track": "Iid",
+        "min_entropy_bits_per_symbol": 7.054617,
+        "h_original": 7.054617,
+        "h_bitstring": 0.986099,
+        "iid_tests_passed": false
+      }
+    },
+    "sp800_90b_non_iid": {
+      "tool_path": "/Users/adrianv/adrian-software/SP800-90B_bin/ea_non_iid",
+      "raw_stdout": "\n*** Warning: data contains less than 1000000 samples ***\n\n\nRunning non-IID tests...\n\nRunning Most Common Value Estimate...\n\nRunning Entropic Statistic Estimates (bit strings only)...\n\nRunning Tuple Estimates...\n\nRunning Predictor Estimates...\n\nH_original: 7.054617\nH_bitstring: 0.718444\nmin(H_original, 8 X H_bitstring): 5.747553\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "*** Warning": 1000000.0,
+        "H_bitstring": 0.718444,
+        "H_original": 7.054617,
+        "min(H_original, 8 X H_bitstring)": 5.747553
+      },
+      "parsed": {
+        "track": "NonIid",
+        "min_entropy_bits_per_symbol": 5.747553,
+        "h_original": 7.054617,
+        "h_bitstring": 0.718444,
+        "iid_tests_passed": null
+      }
+    },
+    "sp800_22": null,
+    "ent": {
+      "tool_path": "/opt/homebrew/bin/ent",
+      "raw_stdout": "Entropy = 7.982296 bits per byte.\n\nOptimum compression would reduce the size\nof this 10000 byte file by 0 percent.\n\nChi square distribution for 10000 samples is 243.48, and randomly\nwould exceed this value 68.73 percent of the times.\n\nArithmetic mean value of data bytes is 127.3857 (127.5 = random).\nMonte Carlo value for Pi is 3.133253301 (error 0.27 percent).\nSerial correlation coefficient is -0.001972 (totally uncorrelated = 0.0).\n",
+      "raw_stderr": "",
+      "exit_success": true,
+      "raw_metrics": {
+        "Entropy": 7.982296,
+        "Serial correlation coefficient is -0.001972 (totally uncorrelated": 0.0
+      },
+      "parsed": {
+        "entropy_bits_per_byte": 7.982296,
+        "chi_square": 243.48,
+        "chi_square_exceed_percent": 68.73,
+        "arithmetic_mean": 127.3857,
+        "monte_carlo_pi": 3.133253301,
+        "monte_carlo_pi_error_percent": 0.27,
+        "serial_correlation": -0.001972
+      }
+    }
+  }
+]
