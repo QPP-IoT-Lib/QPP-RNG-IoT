@@ -1,0 +1,28 @@
+2026-10-09 13:35:42 start board=nano port=COM7 target=250000 chunk=20000 have=0
+2026-10-09 13:35:42 chunk nano-iot-20261009-133542: 20000 records (have 0)
+2026-10-09 16:33:00   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261009-133542: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10632.3s, complete 
+2026-10-09 16:33:00 chunk nano-iot-20261009-163300: 20000 records (have 20000)
+2026-10-09 19:30:10   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261009-163300: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10628.0s, complete 
+2026-10-09 19:30:10 chunk nano-iot-20261009-193010: 20000 records (have 40000)
+2026-10-09 22:27:25   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261009-193010: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10629.1s, complete 
+2026-10-09 22:27:25 chunk nano-iot-20261009-222725: 20000 records (have 60000)
+2026-10-10 01:24:43   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261009-222725: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10630.2s, complete 
+2026-10-10 01:24:43 chunk nano-iot-20261010-012443: 20000 records (have 80000)
+2026-10-10 04:21:58   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-012443: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10628.6s, complete 
+2026-10-10 04:21:58 chunk nano-iot-20261010-042158: 20000 records (have 100000)
+2026-10-10 07:19:13   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-042158: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10628.3s, complete 
+2026-10-10 07:19:13 chunk nano-iot-20261010-071913: 20000 records (have 120000)
+2026-10-10 10:16:28   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-071913: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10628.7s, complete 
+2026-10-10 10:16:28 chunk nano-iot-20261010-101628: 20000 records (have 140000)
+2026-10-10 13:13:43   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-101628: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10629.3s, complete 
+2026-10-10 13:13:43 chunk nano-iot-20261010-131343: 20000 records (have 160000)
+2026-10-10 16:10:59   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-131343: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10629.8s, complete 
+2026-10-10 16:10:59 chunk nano-iot-20261010-161059: 20000 records (have 180000)
+2026-10-10 19:08:14   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-161059: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10627.7s, complete 
+2026-10-10 19:08:14 chunk nano-iot-20261010-190814: 20000 records (have 200000)
+2026-10-10 22:05:29   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-190814: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10628.4s, complete 
+2026-10-10 22:05:29 chunk nano-iot-20261010-220529: 20000 records (have 220000)
+2026-10-11 01:02:46   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261010-220529: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 10629.0s, complete 
+2026-10-11 01:02:46 chunk nano-iot-20261011-010246: 10000 records (have 240000)
+2026-10-11 02:31:27   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\nano-iot-20261011-010246: 10000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621233', bad_sync=0, 5314.7s, complete 
+2026-10-11 02:31:27 end have=250000

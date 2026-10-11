@@ -12,6 +12,11 @@ rand_core = { workspace = true }
 qpp-rng-reference = { workspace = true }
 conditioning = { workspace = true }
 
+# Only for examples/pi_trace.rs (per-cycle reference trace on a Linux host).
+[dev-dependencies]
+rng-core = { workspace = true }
+entropy-timer = { workspace = true }
+
 [lib]
 # Shared `dump_sample` helper every [[bin]] below calls -- see
 # src/lib.rs's module doc for why there are several near-identical

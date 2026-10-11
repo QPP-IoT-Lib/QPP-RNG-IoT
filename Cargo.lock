@@ -654,8 +654,10 @@ name = "qpp-rng-firmware"
 version = "0.1.0"
 dependencies = [
  "conditioning",
+ "entropy-timer",
  "qpp-rng-reference",
  "rand_core 0.10.1",
+ "rng-core",
 ]
 
 [[package]]

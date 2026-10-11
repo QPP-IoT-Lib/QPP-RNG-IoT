@@ -29,13 +29,31 @@ is committed; every number below can be regenerated with the commands in
    across resets** (0/40 positional matches) and **passes every Tier-1
    and `ent` test** on 10 kB per board, at **7.4 B/s**. That rate is set
    by the entropy source and backed by ≥ 8 credited bits per byte; the
-   reference's 6 B/s on the same boards carried 0 bits.
+   reference's 6 B/s on the same boards carried 0 bits. On 1,000,000
+   bytes per board (13 reset-separated chunks each) it passes the full
+   battery: all `ea_iid` IID tests, `ea_non_iid` 7.36 (Mega) / 7.26
+   (Nano), SP 800-22 1419/1426 and 1392/1400.
 4. **nRF52840:** its LFRC-vs-CYCCNT cross-clock source turned out weak (0.61 bits/sample per `ea_non_iid`), but its
    on-chip hardware RNG
    assesses at 6.89 bits/byte. With that as the `JitterSource`, the IoT variant
    differs across resets (0/200 positional matches) and passes every
    Tier-1/`ent` test on 50 kB at **101 B/s**. The raw RNG bytes alone *fail* the runs test (p = 0.006); after the QPP
    walk they pass.
+5. **Fast hosts (Raspberry Pi 4, Windows desktop; §5):** the reference
+   is *not* deterministic there and the workspace tests pass on the Pi
+   (118/0/1). But each cycle's `Δt` is almost entirely set by `n_p`
+   (≈ 1.26 ticks per pad on the Pi's 54 MHz timer), which leaves
+   **0.375 (Pi) / 0.407 (Windows) bits of fresh min-entropy per cycle**
+   per NIST `ea_non_iid`: about 2 bits per default output byte, not 8.
+   The output itself, conditioned or not, still scores 7.2–7.9
+   bits/byte on SP 800-90B, so output-level testing can't see this.
+6. **The whole QPP-IoT stack runs on the boards (§6).** On the Nano, the
+   Mega 2560 and the nRF52840, the physical source → QPP-RNG → SHA-256 → Ascon-AEAD128
+   path gives a different key and nonce on every reset. Every ciphertext
+   and tag matches the ascon-c reference, decrypts, and rejects tampering.
+   A 128-bit key and nonce take 8.7–8.8 s on the AVRs and 0.7 s on the nRF.
+   Ascon with 64 B of message takes 7.8 ms and 0.23 ms. AVR static RAM
+   is 366–662 B, not the 68 B reported before (`.data` was missed).
 
 ## The bench
 
@@ -147,7 +165,7 @@ Code: `crates/qpp-rng-iot/src/{lib,pad,health}.rs`, 15 unit tests.
 | Health tests       | none                                               | SP 800-90B §4.4 RCT + APT (W = 512, α = 2⁻²⁰) on every raw sample → `HealthError`                   | a stuck or degraded source must fail loudly, not silently                                                 |
 | Pad PRNG           | xorshift128+, 128-bit seed, 64-bit Lemire          | xorshift32 seeded by fmix32 of a 64-bit seed register, 8×8-bit Lemire with a lookup-table threshold | PRNG only expands the seed; u64/u128 math is what kills 8-bit cores                                       |
 | Walk               | build pad array → gather into new array → `memcmp` | Fisher–Yates swaps applied directly to the state (`compose_fresh_pad`) + early-exit identity check  | provably the same walk and the same draws (tested); half the memory traffic                               |
-| `N`                | 5 (mean n_p = 120 < 256)                           | 6 (mean 720)                                                                                        | `n_p mod 256` at N = 5: bit 7 set 25.7% per cycle, still 52.8% after XOR-ing 4. At N = 6: 45.6% → 50.003% |
+| `N`                | 5 (mean n_p = 120 < 256)                           | 6 (mean 720)                                                                                        | `n_p mod 256` at N = 5: bit 7 set 25.7% per cycle, still only 47.2% after XOR-ing 4. At N = 6: 45.6% → 49.997% |
 | Entropy accounting | 1 timing sample per walk, 5 walks/byte, fixed      | samples/byte = ⌈8 / credited bits⌉, spread over a fixed 4 walks/byte                                | decouples "enough entropy" from "enough compute"                                                          |
 | API                | `Rng` (infallible)                                 | `TryRng<Error = HealthError>`; `PanicOnHealthFailure` wrapper implements `QppRngSource`             | errors are reportable on-device                                                                           |
 
@@ -339,8 +357,8 @@ Files are written incrementally to `hil-results/long/`
 | Board     | Raw phase                             | IoT phase                                     | Expected finish                                              |
 |-----------|---------------------------------------|-----------------------------------------------|--------------------------------------------------------------|
 | nRF52840  | **done**, 1,000,001 records in 29 min | **done**, 1,000,000 bytes in 2.75 h (101 B/s) | finished 13:30 on 2026-10-08                                 |
-| Mega 2560 | running, 58.9 rec/s                   | queued                                        | raw ~15:05 on 10-08; IoT ~37.5 h later, ~04:40 on 2026-10-10 |
-| Nano      | running, 60.1 rec/s                   | queued                                        | raw ~15:00 on 10-08; IoT ~37 h later, ~04:00 on 2026-10-10   |
+| Mega 2560 | **done**, 1,000,001 records           | **done** on the Windows PC, 1,000,000 bytes in 37.7 h (7.37 B/s), 13 chunks | finished 03:19 on 2026-10-11 |
+| Nano      | **done**, 1,000,001 records           | **done** on the Windows PC, 1,000,000 bytes in 36.9 h (7.53 B/s), 13 chunks | finished 02:31 on 2026-10-11 |
 
 The nRF reflashed from the raw to the IoT firmware with both AVRs
 streaming and no DAPLink errors; it is now on its own USB root rather
@@ -383,6 +401,46 @@ The `ea_non_iid` value of 7.28 for the generator's output is the
 SP 800-90B-assessed figure for the nRF52840 variant: close to the
 7.24 measured on its raw hardware RNG, which means the QPP walk neither
 added nor destroyed measurable bias.
+
+### Results: AVR IoT output, 1,000,000 bytes each (complete, 2026-10-11)
+
+Captured on the Windows PC with the portable kit (`hil-firmware/portable/`,
+hex files from b8e0a82) as 13 chunks per board (12 × 20,000 records +
+1 × 10,000), each started by a board reset. Every chunk: `status=complete`,
+`bad_sync_bytes=0`, no health-test failure, same firmware header
+(`QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 ...`). Chunks were
+concatenated in timestamp order (`<board>-iot.bin`, records) and the output
+words extracted (`<board>-iot-1MB.bin`); per-chunk `.meta` files and the
+driver logs are in `hil-results/long/<board>-iot-chunks/`.
+
+Cross-reset independence: over the first 4,000 bytes of each of the 78
+chunk pairs, the positional match rate is 0.398% (Mega) and 0.394% (Nano)
+against 1/256 = 0.391%; no pair shares even its first 4 bytes.
+
+Full battery via `stats-cli full` in WSL (`hil-results/long/stats-full-avr-iot.json`,
+`ea_{iid,non_iid}-<board>-iot-1MB.txt`, `sts-finalAnalysisReport-<board>-iot.txt`;
+no STS ABORTED):
+
+| Test                           | Mega 2560                                                         | Nano                                                              |
+|--------------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------|
+| Tier 1                         | all pass: monobit p = 0.80, runs p = 0.14, χ² p = 0.67, corr. −0.0012 | all pass: monobit p = 0.015, runs p = 0.23, χ² p = 0.23, corr. 0.0017 |
+| `ent`                          | 7.999823 bits/byte, χ² exceeded 66.58%, π error 0.11%             | 7.999804 bits/byte, χ² exceeded 23.31%, π error 0.01%             |
+| `ea_iid`                       | **all IID tests pass**; H = 7.889                                 | **all IID tests pass**; H = 7.870                                 |
+| `ea_non_iid`                   | **7.358 bits/byte** (H_original 7.889; binding 8 × H_bitstring)   | **7.261 bits/byte** (H_original 7.334, t-tuple; binding 8 × H_bitstring) |
+| SP 800-22 (8 streams × 1 Mbit) | 1419 / 1426 (99.51%)                                              | 1392 / 1400 (99.43%)                                              |
+
+SP 800-22: every failing row is 7/8 (one stream, one sub-test). Mega: 6
+NonOverlappingTemplate templates + Serial; Nano: 7 templates + Universal.
+About 14 failures per board are expected by chance at α = 0.01. Totals
+differ because RandomExcursions(Variant) only apply to streams with enough
+cycles (5 of 8 on the Mega, 4 on the Nano). The Nano's monobit p = 0.015
+passes, and all 8 Nano streams pass STS Frequency.
+
+All three boards' outputs now pass the full battery on 1 MB, with
+`ea_non_iid` 7.26–7.36 bits/byte. As for the nRF, the output estimate
+can't confirm 8 bits/byte; the entropy claim rests on the raw-source
+assessment below (≥ 12.9 assessed bits per byte on the Mega, ≥ 17.9 on
+the Nano, 8 credited) and the continuous health tests.
 
 ### Results: AVR raw sources, 1 M samples each (complete, 15:07)
 
@@ -428,18 +486,282 @@ the assemble steps). The hex files are byte-identical to the build of
 the sources that ran on the boards (commit b8e0a82). `run-chunk.sh` has
 not been run against a board yet; a short first chunk is recommended.
 
+### AVR output phases on the Windows PC (started 2026-10-09 13:35)
+
+The bench moved to a Windows 11 desktop (Intel Core Ultra 7 265KF; AC
+standby disabled): Mega 2560 on `COM5`, Nano (FT232R `AB0LRIQV`) on
+`COM7`, nRF52840 DAPLink VCOM on `COM6`. Both AVRs still held the
+`rawsrc` firmware (header checked). The pinned portable hex files were
+flashed with avrdude 8.3 (winget `AVRDudes.AVRDUDE`; 6470 / 6330 bytes
+verified). A first 20-record capture, twice per board across a reset,
+gave the expected header (`QPPHIL avr iot-wdt N=6 credit=1
+samples_per_byte=8 ...`) and 0/20 positional matches on both boards.
+
+`run-chunk.sh` can't run as is on Windows (no POSIX shell for the
+avrdude/capture steps, and see the CRLF note below), so a small Python
+driver does the same job: `hil-firmware/portable/out/long_iot.py <board>
+<COMn>`, which is gitignored with the rest of `out/`. It captures 20,000-record chunks with
+`tools/capture.py` into `portable/out/` until each board has 250,000
+records. It retries a failed chunk after 60 s, stops on a health-test
+failure, and holds `SetThreadExecutionState(ES_SYSTEM_REQUIRED)` so the
+PC can't sleep. Progress: `portable/out/<board>-driver.log` and each
+chunk's `.meta`. Assemble afterwards as in `portable/README.md`.
+
+Windows checkout gotcha: with `core.autocrlf=true`,
+`portable/SHA256SUMS` is checked out with CRLFs and `sha256sum -c`
+fails on it. The `.hex` files themselves are protected by `-text` and
+match the pinned hashes byte for byte. Adding `SHA256SUMS -text` to
+`.gitattributes` would fix it.
+
+## 5. Reference generator on a fast host: Raspberry Pi 4 and a Windows desktop (2026-10-09)
+
+Section 1 used the Mac only as a 64-byte control ("different on every
+run"). This repeats the trace experiment properly on two hosts, with
+enough data to ask how much fresh entropy each cycle carries rather
+than only whether runs differ.
+
+Tool: `crates/qpp-rng-firmware/examples/pi_trace.rs`. It runs
+`QppRngXorshift::from_seed(SEED).with_oversample(1)` with the HIL
+firmware's seed and writes the same 8-byte `(n_p, Δt)` records, so
+`extract.py ref` rebuilds the default oversample-5 output. Because it's
+built inside the workspace, the `opt-level = 0` pins on
+`qpp-rng-reference` and `entropy-timer` apply as they do for the
+harness.
+
+| Host                    | Raspberry Pi 4 Model B Rev 1.5                                         | Windows 11 desktop                  |
+|-------------------------|------------------------------------------------------------------------|-------------------------------------|
+| CPU / OS                | Cortex-A72 ×4 (ondemand, 0.6–1.5 GHz), Debian 13 aarch64, kernel 6.18.50 | Intel Core Ultra 7 265KF, Windows 11 |
+| Timer backend           | `CNTVCT_EL0`, 54 MHz (18.5 ns/tick)                                    | `QueryPerformanceCounter`, 10 MHz   |
+| `k` nominal → calibrated| 34 → **1**                                                             | 100 → **1**                         |
+| Rust                    | 1.99.0                                                                 | 1.97.1                              |
+| `cargo test --workspace --release` | **118 passed, 0 failed, 1 ignored** (`pi4/cargo-test-summary.txt`) | n/a                         |
+| Cycles/s                | 349,000 (69.8 kB/s default output)                                     | 921,000 (184 kB/s)                  |
+
+**Across runs (Pi, 3 × 20,000 cycles):** the runs differ from the first
+cycle. All three start with the seed-determined `n_p = 211`, but with
+`Δt` = 303, 292 and 293 ticks, and they diverge from there. Positional
+`n_p` matches between runs are 73–89 out of 20,000, against about 83 expected by
+chance for Geometric(1/120). So the MCU failure mode from §1 doesn't
+occur here.
+
+**Statistics, 1 MB (Pi):** the reconstructed reference output
+(`pi4/pi4-ref-1MB.bin`, 5,000,005 cycles) fails monobit, runs and χ²
+(p ≤ 10⁻²⁴). That is §3's structural bias, not a Pi effect: bit 7 is set
+with P = 0.48621, against **0.48654** computed exactly for the XOR of 5
+independent Geometric(1/120) values mod 256 (σ ≈ 0.0005); bits 0–5 are
+at 0.5 within noise. `stats-cli generate-samples --bytes 1000000` on the
+Pi gives the same picture for the library's own candidates: both raw
+references fail monobit/runs/χ², and both SHA-256-conditioned
+candidates pass Tier 1 (monobit p = 0.22 / 0.44, χ² p = 0.78 / 0.79).
+
+**Entropy per cycle.** The seed absorbs `Δt mod 256` each cycle, but
+`n_p` is already fixed by the seed, so the fresh input is `Δt` *given*
+`n_p`. On the Pi, `Δt ≈ 1.10 + 1.262·n_p` ticks. 98% of cycles fall
+within −1.5…+0.7 ticks of that line, and the 99.9th percentile is
++4.7 ticks. A cycle is a ~2 µs walk measured with an 18.5 ns clock,
+so what varies is mostly which side of a tick edge it ends on. For
+`n_p = 3`, 35,131 of 40,976 cycles have `Δt = 5`.
+
+Plug-in conditional min-entropy, −log₂ Σₙ P(n)·max_t P(Δt mod 256 = t | n_p = n):
+
+| Condition                                             | H∞(Δt mod 256 \| n_p), bits/cycle |
+|-------------------------------------------------------|----------------------------------|
+| Pi, idle, 5 M cycles                                  | 0.422                            |
+| Pi, pinned to core 3, idle (2 M)                      | 0.437                            |
+| Pi, pinned to core 3, cores 0–2 busy-looping (2 M)    | 0.422                            |
+| Pi, unpinned, cores 0–2 busy-looping (2 M)            | 0.421                            |
+| Pi, also given the previous 1 / 2 residuals           | 0.406 / 0.404                    |
+| Windows desktop (2 M)                                 | 0.467                            |
+
+So the hosts are not deterministic, but they give about **0.40–0.47
+bits per cycle, i.e. about 2.0–2.3 bits per default output byte**,
+against the 8 bits per byte the oversample-5 design accounts for. Load
+on the other cores doesn't change it. SHA-256 conditioning makes the
+output pass statistics but can't add entropy. To back 8 bits per byte
+at the NIST-assessed 0.375 bits per cycle, the reference would need about 22 cycles per byte
+(~16 kB/s on the Pi), or the IoT variant's explicit accounting
+(credited bits per sample → samples per byte) applied to the host
+timer.
+
+**NIST confirmation.** I built SP 800-90B and STS on the Pi (Linux steps in
+`docs/environment-setup.md`, as written) and ran `ea_non_iid -v -l 0,1000000 <file> 8`
+on `Δt − mode(Δt | n_p) + 128` per cycle, with the mode taken per
+`n_p` over the whole trace (`pi4/{pi4,win}-ref-dt-modres-*.bin`):
+
+| Host    | MCV   | t-tuple   | MultiMMC | LZ78Y | H_original | 8 × H_bitstring | **Assessed**          | Per default byte (× 5) |
+|---------|-------|-----------|----------|-------|------------|-----------------|-----------------------|------------------------|
+| Pi 4    | 0.419 | **0.408** | 0.419    | 0.420 | 0.408      | **0.375**       | **0.375 bits/cycle**  | ≈ 1.9 bits             |
+| Windows | 0.461 | **0.415** | 0.461    | 0.463 | 0.415      | **0.407**       | **0.407 bits/cycle**  | ≈ 2.0 bits             |
+
+NIST comes in a little below the plug-in figures and agrees on MCV.
+An earlier input, `Δt` minus one global linear fit, assessed at 0.565 on
+the Pi (`ea_non_iid-pi4-dt-linfit-residual-1M.txt`). That input is
+invalid: the fit's fractional offset varies with `n_p`, so the rounded
+residual still carries seed-determined information. Taking the mode
+from the same data slightly favours predictability for rare `n_p`
+values, but the common values dominate the sample.
+
+**Full battery on the library's own 1 MB samples**, generated on the Pi
+(`pi4/samples/`, SHA-256 checked against the Pi copies). Tier 1, `ent`
+and SP 800-90B come from the Pi run (`pi4/stats-full-pi4.json`). SP 800-22
+was re-run on the same files in WSL on this PC
+(`pi4/stats-full-pi4-samples-wsl.json`), one STS work dir per
+candidate, 0 aborted tests. The re-run's SP 800-90B values match the Pi's
+to every digit.
+
+| Candidate                                  | Tier 1 | `ent` χ² exceed | `ea_iid` (IID tests) | `ea_non_iid` | SP 800-22     | Failing STS rows (proportion)                                   |
+|--------------------------------------------|--------|-----------------|----------------------|--------------|---------------|-----------------------------------------------------------------|
+| reference-xorshift128plus                  | fail   | 0.01%           | 7.85 (pass)          | 7.42         | 1256 / 1296   | Frequency, CumulativeSums ×2, Runs, Universal, 1 template (6/8) |
+| reference-nextx48                          | fail   | 0.01%           | 7.85 (pass)          | 7.19         | 1353 / 1374   | Frequency, CumulativeSums ×2, 1 template (6/8)                  |
+| reference-xorshift128plus-sha256-conditioned | pass | 77.7%           | 7.89 (pass)          | 7.23         | 1436 / 1452   | none                                                            |
+| reference-nextx48-sha256-conditioned       | pass   | 78.8%           | 7.89 (pass)          | 7.17         | 1332 / 1348   | 1 template (6/8)                                                |
+
+Totals differ because the RandomExcursions tests only apply to streams
+with enough cycles. The conditioned candidates fail 16 stream-tests each,
+against about 14.5 and 13.5 expected by chance at α = 0.01. Both raw
+candidates fail the tests that the bit-7 bias should break: Frequency
+and CumulativeSums on both, plus Runs and Universal on xorshift. Raw
+xorshift fails 40 stream-tests, about 3× chance.
+
+**The first Pi SP 800-22 numbers were invalid** (88/1296, 1360/1374,
+1448/1452 and 1347/1348 in `pi4/stats-full-pi4.json`), and so was an
+earlier reading of the xorshift-vs-nextx48 gap. On the Pi, `assess` was
+put on `PATH` as a symlink in `~/.local/bin`. `run_sp800_22` copies STS's
+`templates/` from `find_tool`'s directory, which is the symlink's
+directory, not STS's. It found nothing there and skipped the copy
+without an error, so every NonOverlappingTemplate run aborted
+(`Template file <templates/template9> not existing` in `stats.txt`). The
+148 rows in `finalAnalysisReport.txt` were then leftover memory: the
+failure mode `tier2.rs` itself documents, but reached by a path its
+guard doesn't cover. Those rows are most of the 1,300–1,450 counted
+stream-tests, so all four totals are meaningless. The Tier-1, `ent` and
+SP 800-90B columns don't use the templates and are unaffected.
+
+Corrected run, with the real STS directory on `PATH`, on the one Pi sample
+copied to this PC (`pi4/pi4-ref-1MB.bin`, raw xorshift reference output
+reconstructed from the trace; `pi4/stats-full-pi4-ref-1MB-wsl.json`,
+`pi4/sts-finalAnalysisReport-pi4-ref-1MB-wsl.txt`): **1289 / 1322**,
+failing Frequency, both CumulativeSums and Runs (the bit-7 bias);
+NonOverlappingTemplate 138 × 8/8 and 10 × 7/8, which is about the chance rate.
+The same setup on WSL reproduces the Mac's nRF52840 STS report exactly
+(1440 / 1452, row for row), which is why the table above uses it.
+
+**What the battery can't see.** SP 800-90B rates even the *raw*
+reference output at 7.2–7.4 bits/byte. The conditioned output gets
+7.2–7.9 and passes Tier 1, `ent`, the SP 800-90B IID tests and SP 800-22 at the
+chance rate, yet by the per-cycle assessment it
+carries about 1.9 bits/byte of fresh entropy. These tools measure how
+the output looks, not how much unpredictable input went into it. Only
+the source-level trace shows the shortfall, just as only the
+cross-reset comparison showed §1's MCU determinism.
+
+Not checked: whether the CPU PLL and the generic timer, both fed by
+the Pi's 54 MHz crystal, make the edge phase partly predictable. That
+would lower these figures further.
+
+## 6. The whole stack on the boards: QPP-IoT end to end (2026-10-11)
+
+Until now the full `qpp-iot` stack (board source → `qpp-rng-iot` →
+SHA-256 → Ascon-AEAD128) had only been linked for AVR (`avr-fit`, size
+check) and run on the host with a mock source. `qpp-iot/firmware/e2e`
+runs it on the board. It builds `QppEntropy` over the board's source,
+draws a 128-bit key and a random 128-bit starting nonce, and then, for
+messages of 0, 16 and 64 bytes with 16 bytes of associated data (nonce =
+start + k), encrypts, decrypts and checks the plaintext. It also
+re-encrypts with one bit flipped (ciphertext, or tag for the empty
+message), which must be rejected. It reports cycle counts and the peak
+stack use, measured by painting free RAM before anything runs. On the
+host, `qpp-iot/scripts/e2e-check.py` resets the board, reads the report
+and recomputes every ciphertext and tag with the ascon-c reference.
+Before use, that reference was checked to reproduce all 1,089 KAT
+vectors (`ascon_c_driver.c` from ASCON-IoT's `tools/differential`,
+ascon-c 446347f, built with MSYS2 gcc). Three resets per board. The
+Mega 2560 was run later the same day, once it was plugged back in.
+
+| | Nano (ATmega328P, 16 MHz) | Mega 2560 (ATmega2560, 16 MHz) | nRF52840 (64 MHz) |
+|---|---|---|---|
+| Result, 3 resets | **PASS**: 9/9 ciphertexts and tags match ascon-c, 9/9 decrypt, 9/9 tampered messages rejected | **PASS**: same, 9/9 on each | **PASS**: same, 9/9 on each |
+| Different key and nonce on every reset | yes (3/3) | yes (3/3) | yes (3/3) |
+| Key generation (first 32 conditioned bytes = 64 raw bytes) | 8.70–8.77 s (139–140 M cycles) | 8.82–8.85 s (141–142 M cycles) | 0.69–0.72 s (44–46 M cycles) |
+| Nonce (rest of that block) / cipher setup | 0.12 ms / 0.11 ms | 0.13 ms / 0.11 ms | 4 µs / 5 µs |
+| Encrypt 0 / 16 / 64 B (+16 B AD) | 70.2k / 83.9k / 125.2k cycles = 4.38 / 5.25 / 7.83 ms | 69.8k / 83.7k / 125.0k cycles = 4.36 / 5.23 / 7.81 ms | 8.2k / 9.8k / 14.8k cycles = 0.13 / 0.15 / 0.23 ms |
+| Decrypt 0 / 16 / 64 B | 71k / 85k / 126–127k cycles | 72k / 85–86k / 127k cycles | 8.3k / 10.0k / 14.9k cycles |
+| Marginal cost per message byte | ≈ 860 cycles | ≈ 860 cycles | ≈ 103 cycles |
+| Flash | 21,016 B (64% of 32 KB) | 21,156 B (8% of 256 KB) | 21,664 B |
+| Static RAM | 662 B (`.data` 594 + `.bss` 68) | 662 B | 0 B (constants stay in flash) |
+| Peak stack (incl. interrupts) | 975–1,029 B | 982–1,039 B | 1,032 B |
+| RAM never touched | 357 B of 2,048 (17%) | 6,491 B of 8,192 | 261,112 B of 262,144 |
+
+Findings:
+
+- **The full stack works on all three boards**, with keys from each
+  board's physical source. On the AVRs, key generation is set by the
+  source: 64 raw bytes at ~7.4 B/s, the rate the 1 MB runs measured. A
+  128-bit key and its nonce take 8.7 s (Nano) to 8.8 s (Mega) after
+  boot. On the nRF it takes 0.7 s. The two AVRs give the same Ascon
+  timings to within 1%, as expected for the same core at the same
+  clock.
+- **Static RAM on AVR is not 68 bytes.** `avr-size`'s default (Berkeley)
+  output folds `.data` into `text`, so it showed only `.bss`. Rust has
+  no flash-resident constants on AVR, and avr-gcc's linker script
+  copies `.rodata` into RAM, including SHA-256's 256-byte round-constant
+  table. Measured with `avr-size -A`: `avr-fit`, the minimal key + nonce
+  + one encryption, uses **366 B** (298 + 68). This firmware uses 662 B
+  because of its report strings. On the Nano that leaves 357 B of 2 KB
+  never touched. That's enough, but a real application on an
+  ATmega328P has about that much to spend.
+- **Optimization level matters for size on AVR.** At `opt-level = "s"`,
+  LLVM inlines Ascon's permutation into each caller (setup, associated
+  data, finalization, encrypt, decrypt) at 3–5.5 KB each. With
+  decryption in the image, that makes 34.7 KB on an ATmega328P, 1.9 KB
+  more than it has. At `"z"` the permutation stays one 3.0 KB function and
+  the image is 21.0 KB. `avr-fit` drops from 16,134 to 15,694 B. The
+  source-limited key time didn't change.
+
+Provenance: the qpp-iot repo at 7d6f2da plus the new, uncommitted
+`firmware/e2e` and `scripts/{build-e2e.sh,e2e-check.py}`. ascon at
+faf4331; qpp-rng at 30190d8, whose only uncommitted source change is a
+doc comment. AVR toolchain: WSL Ubuntu, rustc 1.101.0-nightly
+(2026-10-10), avr-gcc 14.3.0. nRF toolchain: rustc 1.97.1 stable on
+Windows. The nRF was flashed by copying the hex to the DAPLink drive
+and reset by a serial break. Reports and the exact images are in
+`hil-results/e2e/` (`SHA256SUMS`). All three boards now run this
+firmware instead of the HIL `iot` firmware. The Mega was flashed with
+`avrdude -c wiring -D` on COM5.
+
+```bash
+qpp-iot/scripts/build-e2e.sh atmega328p          # AVR (needs nightly + avr-gcc)
+(cd qpp-iot/firmware/e2e && cargo build --release --target thumbv7em-none-eabihf)
+uv run qpp-iot/scripts/e2e-check.py --port COM7 --ascon-c ./ascon_c_driver --runs 3    # Nano; Mega: COM5
+uv run qpp-iot/scripts/e2e-check.py --port COM6 --reset break --ascon-c ./ascon_c_driver --runs 3
+```
+
 ## Open items
 
 1. **USB reliability.** The nRF's DAPLink dropped off USB HID three
    times, twice while both AVRs were streaming on the same Genesys USB
    2.1 hub. It recovered after a replug (new port `usbmodem21102`). For
    long runs, put the nRF on its own port.
-2. Long captures are running (see above); assess each phase as it
-   completes. The AVR IoT phases need ~37 h each for 1 MB.
-3. Optional promotion: the AVR watchdog and nRF RNG sources live in the
+2. ~~The AVR IoT 1 MB phases.~~ Done 2026-10-11; see "Results: AVR IoT
+   output" above.
+3. NIST tools are on this PC's WSL Ubuntu (`~/tools`; `ea_iid`/`ea_non_iid`
+   linked in `~/.local/bin`, the STS directory itself on `PATH`; `stats-cli`
+   built from the Windows checkout with `CARGO_TARGET_DIR=~/qpp-target`)
+   and on the Pi. On the Pi, the `assess` symlink was replaced with the STS
+   directory on `PATH` in `~/.bashrc` (2026-10-09); non-login `ssh`
+   commands need that `PATH` exported explicitly.
+   Harness hardening worth doing: canonicalize `tool_path` in
+   `run_sp800_22` before taking `parent()`, and fail loudly (or mark
+   SP 800-22 unparsed) if `templates/` can't be found or if `stats.txt`
+   says "ABORTED".
+4. §5's result raises a design question for the reference on fast
+   hosts: oversample 5 gives about 2 bits per byte there. Either raise
+   oversample (~22 cycles per byte at 0.375 bits/cycle) or account for
+   entropy per sample as `qpp-rng-iot` does.
+5. Optional promotion: the AVR watchdog and nRF RNG sources live in the
    HIL firmware today. If the library should ship them, they belong next
    to `entropy-timer`'s per-platform C shims.
-4. `candidates`/`xtask` don't know about the IoT variant yet. Its
+6. `candidates`/`xtask` don't know about the IoT variant yet. Its
    entropy only exists on hardware, so a host-side candidate would
    measure the mock source rather than the design.
 
@@ -490,3 +812,6 @@ is required).
 | `hil-results/raw/`                            | every capture (`.bin` records + `.meta`)                                                      |
 | `hil-results/samples/`                        | byte streams that the stats were run on                                                       |
 | `hil-results/flash-backups/`                  | original board firmware                                                                       |
+| `hil-results/pi4/`                            | §5: Pi 4 reference traces (`ref-{a,b,c}.bin`), 1 MB output, Δt-vs-mode residual streams (Pi, Windows), `ea_non_iid` outputs, full-battery JSON, test summary |
+| `crates/qpp-rng-firmware/examples/pi_trace.rs` | §5: per-cycle `(n_p, Δt)` trace of the reference on any host, HIL record format              |
+| `hil-results/e2e/`                            | §6: end-to-end reports (`nano-e2e.log`, `mega2560-e2e.log`, `nrf52840-e2e.log`) and the exact images run (`SHA256SUMS`) |

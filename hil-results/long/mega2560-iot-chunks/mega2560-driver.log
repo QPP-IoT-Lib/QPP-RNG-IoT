@@ -1,0 +1,28 @@
+2026-10-09 13:35:42 start board=mega2560 port=COM5 target=250000 chunk=20000 have=0
+2026-10-09 13:35:42 chunk mega2560-iot-20261009-133542: 20000 records (have 0)
+2026-10-09 16:36:48   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261009-133542: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10860.5s, complete 
+2026-10-09 16:36:48 chunk mega2560-iot-20261009-163648: 20000 records (have 20000)
+2026-10-09 19:37:47   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261009-163648: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10858.6s, complete 
+2026-10-09 19:37:47 chunk mega2560-iot-20261009-193747: 20000 records (have 40000)
+2026-10-09 22:38:53   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261009-193747: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10860.5s, complete 
+2026-10-09 22:38:53 chunk mega2560-iot-20261009-223853: 20000 records (have 60000)
+2026-10-10 01:40:02   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261009-223853: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10862.7s, complete 
+2026-10-10 01:40:02 chunk mega2560-iot-20261010-014002: 20000 records (have 80000)
+2026-10-10 04:41:09   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-014002: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10861.7s, complete 
+2026-10-10 04:41:09 chunk mega2560-iot-20261010-044109: 20000 records (have 100000)
+2026-10-10 07:42:15   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-044109: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10860.6s, complete 
+2026-10-10 07:42:15 chunk mega2560-iot-20261010-074215: 20000 records (have 120000)
+2026-10-10 10:43:23   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-074215: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10862.7s, complete 
+2026-10-10 10:43:23 chunk mega2560-iot-20261010-104323: 20000 records (have 140000)
+2026-10-10 13:44:35   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-104323: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10866.3s, complete 
+2026-10-10 13:44:35 chunk mega2560-iot-20261010-134435: 20000 records (have 160000)
+2026-10-10 16:45:44   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-134435: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10863.7s, complete 
+2026-10-10 16:45:44 chunk mega2560-iot-20261010-164544: 20000 records (have 180000)
+2026-10-10 19:46:50   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-164544: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10860.5s, complete 
+2026-10-10 19:46:50 chunk mega2560-iot-20261010-194650: 20000 records (have 200000)
+2026-10-10 22:48:00   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-194650: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10864.2s, complete 
+2026-10-10 22:48:00 chunk mega2560-iot-20261010-224800: 20000 records (have 220000)
+2026-10-11 01:49:08   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261010-224800: 20000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 10862.2s, complete 
+2026-10-11 01:49:08 chunk mega2560-iot-20261011-014908: 10000 records (have 240000)
+2026-10-11 03:19:44   rc=0 C:\AdrianDevelopment\2026-20\Thesis\qpp-rng-lib\qpp-rng\hil-firmware\portable\out\mega2560-iot-20261011-014908: 10000 records, header='QPPHIL avr iot-wdt N=6 credit=1 samples_per_byte=8 compute_ticks_per_byte=1621365', bad_sync=0, 5430.3s, complete 
+2026-10-11 03:19:44 end have=250000

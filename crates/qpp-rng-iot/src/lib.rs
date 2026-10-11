@@ -75,10 +75,10 @@ use pad::{Xorshift32, compose_fresh_pad, fmix32, is_identity};
 /// Default permutation width. One more than the reference's `N = 5`:
 /// `n_p` is geometric with mean `N!`, and with `5! = 120 < 256` the
 /// extracted `n_p mod 256` is heavily skewed (the reference's
-/// documented MSB bias -- bit 7 is set only ~26% of the time per cycle,
-/// and still ~52.8% of the time after XOR-ing 4 cycles, enough to fail a chi-square
+/// documented MSB bias -- bit 7 is set only ~25.7% of the time per cycle,
+/// and still only ~47.2% of the time after XOR-ing 4 cycles, enough to fail a chi-square
 /// test on 40k bytes). With `6! = 720` the per-cycle skew drops to
-/// ~46% and to ~50.003% after 4 cycles. The walk costs 6x more pad draws,
+/// ~45.6% and to ~49.997% after 4 cycles. The walk costs 6x more pad draws,
 /// but on the measured boards it still completes well inside one
 /// jitter-sample period, so throughput is set by the source, not the walk.
 pub const DEFAULT_ARRAY_SIZE: usize = 6;
@@ -105,7 +105,7 @@ impl<J: JitterSource + ?Sized> JitterSource for &mut J {
 /// Convergence walks XOR-ed into each output byte. A single
 /// `n_p mod 256` draw is geometrically skewed (bit 7 is set ~45.6% of
 /// the time for `N = 6`); XOR-ing 4 independent draws brings that to
-/// ~50.003%, and every other bit closer still.
+/// ~49.997%, and every other bit closer still.
 pub const WALKS_PER_BYTE: u8 = 4;
 
 /// Raw samples absorbed per walk so that each output byte is backed by
