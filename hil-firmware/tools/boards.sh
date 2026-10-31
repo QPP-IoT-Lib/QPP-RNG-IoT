@@ -2,10 +2,11 @@
 # long-capture.sh and smoke.sh -- not run directly.
 #
 # Defaults match the bench these results were recorded on; override
-# MEGA_PORT / NANO_PORT in the environment if yours differ.
+# MEGA_PORT / NANO_PORT / ESP32_PORT in the environment if yours differ.
 
 MEGA_PORT="${MEGA_PORT:-/dev/cu.usbmodem11201}"
 NANO_PORT="${NANO_PORT:-/dev/cu.usbserial-AB0LRIQV}"
+ESP32_PORT="${ESP32_PORT:-COM4}"
 
 # Opening an Arduino's port resets it (DTR); the nRF52840 has no such
 # line, so it is reset through the debug probe, retrying because its
@@ -23,12 +24,13 @@ nrf_port() {
   return 0
 }
 
-# port_for <mega2560|nano|nrf52840>
+# port_for <mega2560|nano|nrf52840|esp32>
 port_for() {
   case "$1" in
     mega2560) echo "$MEGA_PORT" ;;
     nano) echo "$NANO_PORT" ;;
     nrf52840) nrf_port ;;
+    esp32) echo "$ESP32_PORT" ;;
     *) echo "unknown board $1" >&2; return 2 ;;
   esac
 }

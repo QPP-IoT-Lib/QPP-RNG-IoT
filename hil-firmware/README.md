@@ -9,7 +9,8 @@ still passing statistical tests. Results and analysis:
 `hil-results/REPORT.md`.
 
 Supported boards: Arduino Mega 2560 (`mega2560`), Arduino Nano /
-ATmega328P (`nano`), makerdiary nRF52840 MDK (`nrf52840`).
+ATmega328P (`nano`), makerdiary nRF52840 MDK (`nrf52840`), ESP32
+(`esp32`).
 
 ## Layout
 
@@ -17,11 +18,12 @@ ATmega328P (`nano`), makerdiary nRF52840 MDK (`nrf52840`).
 |---|---|
 | `avr/` | firmware for the two Arduinos (Mega 2560, Nano); `-Z build-std=core` on nightly, avr-gcc for the C shims |
 | `nrf52840/` | firmware for the nRF52840 MDK (`thumbv7em-none-eabihf`, stable Rust) |
-| `common/` | `no_std` code both firmwares share: the UART record protocol and the whole `iot` run loop; boards supply their UART and jitter source |
+| `esp32/` | firmware for the ESP32 (`xtensa-esp32-none-elf`, `esp` toolchain, `esp-hal` for startup and UART) |
+| `common/` | `no_std` code all firmwares share: the UART record protocol and the whole `iot` run loop; boards supply their UART and jitter source |
 | `tools/` | host side: build/flash script, capture and analysis scripts (below) |
 | `portable/` | prebuilt Arduino IoT firmware plus a run script, for long runs on another machine |
 
-`avr/` and `nrf52840/` are separate Cargo workspaces (the root
+`avr/`, `nrf52840/` and `esp32/` are separate Cargo workspaces (the root
 workspace `exclude`s `hil-firmware`) because they only build for their
 bare-metal target.
 
@@ -35,7 +37,7 @@ board's UART at 115200 baud: one ASCII header line starting with
 | Mode | Feature | Streams | Used to |
 |---|---|---|---|
 | reference trace | (none) | `n_p`, `Δt` of each convergence cycle of `qpp-rng-reference` | check output repeatability across resets |
-| raw source | `rawsrc` | jitter sample, plus the nRF's hardware RNG byte | assess entropy sources with SP 800-90B |
+| raw source | `rawsrc` | jitter sample, plus the nRF's hardware RNG byte or the ESP32's RNG word | assess entropy sources with SP 800-90B |
 | IoT | `iot` | 4 output bytes of `qpp-rng-iot`, and the ticks it took | measure speed and test the output |
 
 ## Workflow
@@ -49,6 +51,8 @@ hil-firmware/tools/run.sh nano iot
 uv run hil-firmware/tools/capture.py --port /dev/cu.usbserial-XXXX --records 2500 --out hil-results/raw/nano-iot
 uv run hil-firmware/tools/capture.py --port /dev/cu.usbmodemXXXX --records 2500 \
     --reset-cmd "probe-rs reset --chip nRF52840_xxAA" --out hil-results/raw/nrf-iot
+
+# An ESP32 is reset through its USB-serial bridge: add --reset-rts.
 
 # Turn records into plain byte streams (modes: ref | iot | hwrng | jitter)
 python3 hil-firmware/tools/extract.py iot hil-results/raw/nano-iot.bin hil-results/samples/nano-iot.bin
@@ -85,7 +89,9 @@ Serial ports and the nRF reset command are in `tools/boards.sh`
 
 `rustup` (stable, plus nightly with `rust-src` for AVR), avr-gcc 14 and
 `avrdude` (AVR boards; `brew install avr-gcc@14 avrdude`), `probe-rs`
-(nRF52840), `uv` (runs `capture.py` with its own pyserial). Optional:
+(nRF52840), `espup` and `espflash` (ESP32; `espup install --targets esp32`
+provides the `esp` toolchain and `xtensa-esp32-elf-gcc`, which must be on
+`PATH`), `uv` (runs `capture.py` with its own pyserial). Optional:
 `ent` and the NIST SP 800-90B / SP 800-22 tools (see
 `docs/environment-setup.md`). The nRF's C shim compiles with plain
 clang, no arm-none-eabi-gcc.
@@ -100,6 +106,14 @@ clang, no arm-none-eabi-gcc.
   and sets both the health-test cutoffs and how many samples go into
   each output byte. Re-assess and update it for any new board or
   source.
+- The ESP32's RNG is only documented as truly random with the radio or
+  its SAR ADC noise source on. The `rawsrc` and `iot` firmware turn the ADC
+  source on; the `rawsrc-noadc` feature leaves it off, for comparison.
+- A byte can be lost on the serial link (seen once on the ESP32's CH340), so
+  `capture.py` rejects any record not followed by a sync byte. Check
+  `bad_sync_bytes` and `dropped_frames` in the `.meta`.
+- `stats-cli full` still reports `overall_pass=true` if `assess` isn't on
+  `PATH`. Check that `sp800_22.parsed` isn't empty.
 - The nRF52840 MDK's DAPLink USB can drop out under load; if
   `probe-rs` stops seeing the probe, replug the board (the serial port
   name may change).

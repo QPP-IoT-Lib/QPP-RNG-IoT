@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-minute check that a board runs the IoT firmware correctly.
 #
-#   hil-firmware/tools/smoke.sh <mega2560|nano|nrf52840> [records]
+#   hil-firmware/tools/smoke.sh <mega2560|nano|nrf52840|esp32> [records]
 #
 # Flashes the `iot` firmware (skip with NOFLASH=1), resets the board and
 # captures `records` records (default 10; 1 record = 4 output bytes) twice,
@@ -17,7 +17,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 . "$here/boards.sh"
 
-board="${1:?board: mega2560 | nano | nrf52840}"
+board="${1:?board: mega2560 | nano | nrf52840 | esp32}"
 records="${2:-10}"
 port="$(port_for "$board")"
 [ -n "$port" ] || { echo "no serial port found for $board" >&2; exit 1; }
@@ -31,6 +31,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 reset=()
 [ "$board" = nrf52840 ] && reset=(--reset-cmd "$NRF_RESET_CMD")
+[ "$board" = esp32 ] && reset=(--reset-rts)
 
 for run in a b; do
   uv run -q "$here/capture.py" --port "$port" --records "$records" --timeout 300 \

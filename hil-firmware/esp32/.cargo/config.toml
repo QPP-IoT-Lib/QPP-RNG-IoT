@@ -1,0 +1,12 @@
+[build]
+target = "xtensa-esp32-none-elf"
+
+[target.xtensa-esp32-none-elf]
+rustflags = ["-C", "link-arg=-Tlinkall.x", "-C", "link-arg=-nostartfiles"]
+
+[unstable]
+build-std = ["core"]
+
+# entropy-timer's build.rs compiles c/esp32_timer.c.
+[env]
+CC_xtensa_esp32_none_elf = "xtensa-esp32-elf-gcc"

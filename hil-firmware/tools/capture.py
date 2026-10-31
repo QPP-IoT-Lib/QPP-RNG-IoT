@@ -7,7 +7,8 @@
 Opening the port asserts DTR, which auto-resets an Arduino, so every
 capture starts from the firmware's fixed seed. For boards without
 auto-reset (the nRF52840 MDK), pass --reset-cmd to reset it via the
-debug probe after the port is open.
+debug probe after the port is open. An ESP32 board is reset with
+--reset-rts, through the DTR/RTS circuit its USB-serial bridge drives.
 
 Usage:
   uv run capture.py --port /dev/cu.usbmodem11201 --records 2000 --out run1
@@ -37,6 +38,8 @@ def main():
     ap.add_argument("--records", type=int, required=True)
     ap.add_argument("--timeout", type=float, default=600.0, help="give up after this many seconds")
     ap.add_argument("--reset-cmd", help="shell command that resets the board once the port is open")
+    ap.add_argument("--reset-rts", action="store_true",
+                    help="pulse RTS with DTR released once the port is open (ESP32 boards)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stall-timeout", type=float, default=120.0,
                     help="stop if no bytes arrive for this many seconds")
@@ -44,8 +47,19 @@ def main():
                     help="flush data and rewrite the progress .meta every N records")
     args = ap.parse_args()
 
-    s = serial.Serial(args.port, args.baud, timeout=0.5)
+    s = serial.Serial(baudrate=args.baud, timeout=0.5)
+    s.port = args.port
+    if args.reset_rts:
+        # Both lines released leaves EN and GPIO0 high; only RTS alone resets.
+        s.dtr = False
+        s.rts = False
+    s.open()
     s.reset_input_buffer()
+    if args.reset_rts:
+        s.rts = True
+        time.sleep(0.1)
+        s.reset_input_buffer()
+        s.rts = False
     if args.reset_cmd:
         subprocess.run(args.reset_cmd, shell=True, check=True, capture_output=True)
         s.reset_input_buffer()
@@ -53,9 +67,12 @@ def main():
     t_start = time.monotonic()
     deadline = t_start + args.timeout
 
-    # Header line.
+    # Header line. Lines before it are boot messages (ESP32 ROM and
+    # bootloader) or junk from before the reset.
     header = b""
-    while not header.endswith(b"\n"):
+    while not (header.endswith(b"\n") and b"QPPHIL" in header):
+        if header.endswith(b"\n"):
+            header = b""
         c = s.read(1)
         if c:
             header += c
@@ -71,6 +88,7 @@ def main():
     t_first = None
     t_last_data = time.monotonic()
     bad_sync = 0
+    dropped = 0
     stop_reason = "complete"
     out = open(args.out + ".bin", "wb")
 
@@ -80,6 +98,7 @@ def main():
             f.write(f"header={header}\n")
             f.write(f"records={n}\n")
             f.write(f"bad_sync_bytes={bad_sync}\n")
+            f.write(f"dropped_frames={dropped}\n")
             f.write(f"seconds={elapsed:.3f}\n")
             f.write(f"records_per_second={(n - 1) / elapsed if elapsed > 0 and n > 1 else 0:.3f}\n")
             f.write(f"status={stop_reason if final else 'running'}\n")
@@ -104,10 +123,17 @@ def main():
             if b"HEALTH-FAIL" in buf:
                 stop_reason = "health-test-failure"
                 break
-            while len(buf) >= REC:
+            # A record counts only if the next record's sync byte follows it:
+            # a byte lost on the serial link would otherwise shift one record.
+            while len(buf) > REC:
                 if buf[0] != SYNC:
                     del buf[0]
                     bad_sync += 1
+                    continue
+                if buf[REC] != SYNC:
+                    del buf[0]
+                    bad_sync += 1
+                    dropped += 1
                     continue
                 if t_first is None:
                     t_first = time.monotonic()

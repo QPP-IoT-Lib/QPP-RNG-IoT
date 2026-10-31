@@ -1,0 +1,50 @@
+[package]
+name = "qpp-hil-esp32"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Hardware-in-the-loop firmware for the ESP32 (Xtensa LX6, ESP32-D0WD-V3).
+# Own workspace for the same reason as ../avr. Needs the espup toolchain
+# ("esp") and xtensa-esp32-elf-gcc on PATH for entropy-timer's C shim.
+
+[dependencies]
+esp-hal = { version = "1.2.2", features = ["esp32", "unstable"] }
+esp-bootloader-esp-idf = { version = "0.6.0", features = ["esp32"] }
+entropy-timer = { path = "../../crates/entropy-timer" }
+qpp-hil-common = { path = "../common" }
+qpp-rng-reference = { path = "../../crates/qpp-rng-reference" }
+qpp-rng-iot = { path = "../../crates/qpp-rng-iot", optional = true }
+rng-core = { path = "../../crates/rng-core" }
+
+[features]
+default = []
+# Stream raw source samples: RTC slow clock (RC) timed by the crystal,
+# plus the on-chip RNG with its SAR ADC noise source enabled.
+rawsrc = []
+# rawsrc with the ADC noise source left off and the radio off: the state
+# in which Espressif documents the RNG as pseudo-random.
+rawsrc-noadc = ["rawsrc"]
+# Stream the IoT variant's output.
+iot = ["dep:qpp-rng-iot", "qpp-hil-common/iot"]
+
+[[bin]]
+name = "qpp-hil-esp32"
+path = "src/main.rs"
+test = false
+bench = false
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = true
+
+[profile.release.package.qpp-rng-reference]
+opt-level = 0
+
+[profile.release.package.entropy-timer]
+opt-level = 0
+
+[workspace]

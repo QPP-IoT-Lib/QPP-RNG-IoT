@@ -3,7 +3,7 @@
 # (for a >= 1 M-sample SP 800-90B non-IID assessment), then the IoT
 # generator's output (towards >= 1 MB for the IID track and SP 800-22).
 #
-#   hil-firmware/tools/long-capture.sh <mega2560 | nano | nrf52840>
+#   hil-firmware/tools/long-capture.sh <mega2560 | nano | nrf52840 | esp32>
 #
 # Writes hil-results/long/<board>-{rawsrc,iot}.{bin,meta} incrementally
 # (`status=running` in the .meta until each phase ends) and logs to
@@ -42,6 +42,7 @@ capture() { # mode records timeout_seconds
   port="$(port_for "$board")"
   [ -n "$port" ] || { log "no serial port found for $board"; return 1; }
   [ "$board" = nrf52840 ] && reset=(--reset-cmd "$NRF_RESET_CMD")
+  [ "$board" = esp32 ] && reset=(--reset-rts)
   log "capturing $records $mode records from $port"
   uv run -q "$here/capture.py" --port "$port" --records "$records" \
     --timeout "$timeout" ${reset[@]+"${reset[@]}"} --out "$out_dir/$board-$mode"
@@ -65,6 +66,10 @@ case "$board" in
     phase iot "$IOT_RECORDS" $((48 * 3600))
     ;;
   nrf52840)
+    phase rawsrc "$RAW_RECORDS" 3600
+    phase iot "$IOT_RECORDS" $((4 * 3600))
+    ;;
+  esp32)
     phase rawsrc "$RAW_RECORDS" 3600
     phase iot "$IOT_RECORDS" $((4 * 3600))
     ;;

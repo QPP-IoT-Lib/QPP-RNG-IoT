@@ -2,10 +2,10 @@
 # Build + flash one HIL firmware mode onto one board.
 #
 #   hil-firmware/tools/run.sh <board> <mode>
-#     board: mega2560 | nano | nrf52840
-#     mode:  ref | rawsrc | iot
+#     board: mega2560 | nano | nrf52840 | esp32
+#     mode:  ref | rawsrc | iot (esp32 also: rawsrc-noadc)
 #
-# Ports come from boards.sh (override with MEGA_PORT / NANO_PORT).
+# Ports come from boards.sh (override with MEGA_PORT / NANO_PORT / ESP32_PORT).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")/.." && pwd)"   # hil-firmware/
@@ -15,7 +15,7 @@ mode="$2"
 features=""
 case "$mode" in
   ref) ;;
-  rawsrc | iot) features="--features $mode" ;;
+  rawsrc | rawsrc-noadc | iot) features="--features $mode" ;;
   *) echo "unknown mode $mode" >&2; exit 2 ;;
 esac
 
@@ -47,6 +47,14 @@ case "$board" in
     elf=target/thumbv7em-none-eabihf/release/qpp-hil-nrf52840
     "$llvm_bin/llvm-size" "$elf"
     probe-rs download --chip nRF52840_xxAA "$elf"
+    ;;
+  esp32)
+    cd "$here/esp32"
+    # The esp toolchain's rustc can trail the workspace's rust-version by a
+    # patch release. xtensa-esp32-elf-gcc comes from `espup install`.
+    cargo build --release --ignore-rust-version $features
+    espflash flash --chip esp32 --port "$(port_for esp32)" --non-interactive \
+      target/xtensa-esp32-none-elf/release/qpp-hil-esp32
     ;;
   *) echo "unknown board $board" >&2; exit 2 ;;
 esac
