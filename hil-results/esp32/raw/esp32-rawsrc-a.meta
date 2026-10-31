@@ -1,0 +1,6 @@
+header=QPPHIL esp32 rawsrc rtcslow256-vs-xtal+hwrng-adc
+records=20000
+bad_sync_bytes=0
+seconds=32.832
+records_per_second=609.135
+status=complete

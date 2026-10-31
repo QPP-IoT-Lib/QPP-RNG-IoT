@@ -1,0 +1,6 @@
+header=QPPHIL esp32 ref-xorshift128plus N=5
+records=2000
+bad_sync_bytes=0
+seconds=1.562
+records_per_second=1279.999
+status=complete

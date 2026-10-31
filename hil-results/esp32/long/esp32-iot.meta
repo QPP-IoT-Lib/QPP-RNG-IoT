@@ -1,0 +1,7 @@
+header=QPPHIL esp32 iot-hwrng N=6 credit=4 samples_per_byte=4 compute_ticks_per_byte=704109
+records=250000
+bad_sync_bytes=0
+dropped_frames=0
+seconds=2594.007
+records_per_second=96.376
+status=complete

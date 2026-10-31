@@ -16,6 +16,7 @@ captura, en [`../hil-firmware/`](../hil-firmware/README.md).
 | makerdiary nRF52840 MDK | Cortex-M4F, 64 MHz | UART0 hacia DAPLink, reinicio por `probe-rs` o por *serial break* | RNG interno con corrección de sesgo; también se evaluó LFRC frente a CYCCNT |
 | Raspberry Pi 4 | Cortex-A72, Debian 13 aarch64 | SSH | Ninguna adicional: temporización del generador de referencia (`CNTVCT_EL0`, 54 MHz) |
 | PC con Windows 11 | Intel Core Ultra 7 265KF | Local | Igual que la Pi: `QueryPerformanceCounter`, 10 MHz |
+| ESP32 | ESP32-D0WD-V3, 240 MHz | UART0 hacia CH340, reinicio por RTS | RNG interno con la fuente de ruido del ADC activada; también se evaluó el reloj lento RTC frente al cristal |
 
 Las capturas de `raw/`, las capturas de fuente cruda de los AVR y todas las del
 nRF52840 se hicieron el 2026-10-08 en un Mac. Las capturas de salida de 1 MB de
@@ -104,6 +105,7 @@ hil-results/
 ├── long/            capturas de 1 M de muestras y 1 MB, y sus análisis
 ├── pi4/             referencia en Raspberry Pi 4 y Windows
 ├── e2e/             pila QPP-IoT completa en las placas
+├── esp32/           todos los datos de la placa ESP32
 └── flash-backups/   firmware original de las placas
 ```
 
@@ -220,17 +222,73 @@ prueba. Los comandos de restauración están en `REPORT.md`, sección
 | `nano328p-original.hex` | Arduino Nano |
 | `nrf52840-original.bin` | nRF52840 MDK |
 
-## ESP32 (pruebas pendientes)
+## ESP32
 
-Aún no hay resultados de la placa ESP32 (ESP32-D0WD-V3, 240 MHz, 4 MB de flash,
-CH340 en `COM4`), porque todavía no existe firmware HIL para ella. Las pruebas
-previstas son las mismas que en las demás placas, y este documento se ampliará
-cuando se ejecuten.
+Los datos están en `esp32/`, que repite la organización de los demás
+directorios. Placa: ESP32-D0WD-V3 a 240 MHz, con cristal de 40 MHz, 4 MB de
+flash y CH340 en `COM4`. Las capturas se hicieron el 2026-10-30 en el PC con
+Windows, y los análisis, en WSL Ubuntu. Los resultados están en `REPORT.md`, §7.
 
-Su firmware original está respaldado localmente en
+### Configuración
+
+- **Firmware:** `../hil-firmware/esp32`, con `esp-hal` 1.2.2 para el arranque,
+  los relojes y la UART. Usa el mismo formato de registro y los mismos perfiles
+  de compilación que las demás placas. Se ejecuta en el núcleo 0, con el núcleo
+  1 detenido y la radio apagada.
+- **Reinicio:** `capture.py --reset-rts`, por el pin EN a través del puente
+  USB-serie. No se probaron ciclos de alimentación.
+- **Encuadre estricto:** `capture.py` solo acepta un registro si le sigue el
+  byte de sincronización del siguiente. Los rechazos se cuentan en
+  `dropped_frames`. Las capturas de `esp32/long/` y las `esp32-iot-repro-*` ya
+  se hicieron con esta comprobación, sin ningún rechazo.
+
+| Modo | Encabezado | Campo 1 | Campo 2 |
+|---|---|---|---|
+| `ref` | `QPPHIL esp32 ref-xorshift128plus N=5` | `n_p` | `Δt`, en ciclos de CPU |
+| `rawsrc` | `QPPHIL esp32 rawsrc rtcslow256-vs-xtal+hwrng-adc` | Ciclos del cristal de 40 MHz en 256 ciclos del reloj lento RTC | Palabra de 32 bits del RNG, con la fuente de ruido del ADC activada |
+| `rawsrc-noadc` | `QPPHIL esp32 rawsrc rtcslow256-vs-xtal+hwrng-noadc` | Igual que `rawsrc` | Palabra del RNG, con esa fuente desactivada |
+| `iot` | `QPPHIL esp32 iot-hwrng N=6 credit=4 samples_per_byte=4 …` | 4 bytes de salida | Ciclos de CPU empleados |
+
+La versión `iot` usa como fuente el byte bajo del RNG con la fuente de ruido del
+ADC activada, y le acredita 4 bits por byte. Esa acreditación se apoya en la
+evaluación de 7,15 bits por byte con 1 M de muestras.
+
+| Ejecución | Registros | Archivos |
+|---|---|---|
+| Repetibilidad de `ref` | 2.000 × 2 y 20.000 × 3 | `raw/esp32-ref-repro-{a,b}`, `raw/esp32-ref-long-{a,b,c}` |
+| Fuente cruda corta | 20.000 × 2 | `raw/esp32-rawsrc-{a,b}` |
+| RNG sin la fuente de ruido del ADC | 20.000 × 2 | `raw/esp32-rawsrc-noadc-{a,b}` |
+| Repetibilidad de `iot` | 50 × 2 (200 bytes) | `raw/esp32-iot-repro-{a,b}` |
+| Fuente cruda larga | 1.000.001 | `long/esp32-rawsrc` |
+| Salida `iot` larga | 250.000 (1.000.000 bytes), en un solo arranque | `long/esp32-iot` |
+| Pila completa | 3 reinicios | `e2e/esp32-e2e.log` |
+
+### Contenido de `esp32/`
+
+| Archivos | Contenido |
+|---|---|
+| `raw/*.{bin,meta}` | Capturas cortas, en el formato de registros descrito arriba |
+| `raw/ea_*-esp32-*.txt` | Análisis NIST de las muestras cortas |
+| `samples/esp32-ref.bin` | 4.000 B de salida reconstruida de la referencia, a partir de `esp32-ref-long-a` |
+| `samples/esp32-rtcslow-jitter-lowbyte.bin` | 19.999 B: byte bajo de la medida del reloj lento RTC |
+| `samples/esp32-hwrng-raw.bin`, `samples/esp32-hwrng-noadc-raw.bin` | 20.000 B del RNG, con y sin la fuente de ruido del ADC |
+| `long/esp32-rawsrc.{bin,meta}`, `long/esp32-iot.{bin,meta}` | Capturas largas en formato de registros |
+| `long/esp32-rtcslow-jitter-lowbyte-1M.bin`, `long/esp32-hwrng-raw-1M.bin` | Las dos fuentes con 1 M de muestras, extraídas de `esp32-rawsrc` |
+| `long/esp32-iot-1MB.bin` | Los 1.000.000 de bytes de salida |
+| `long/ea_*-esp32-{rtcslow,hwrng-raw}-1M.txt` | Análisis NIST de las fuentes |
+| `long/ea_*-esp32-iot-1MB.txt` | Análisis NIST de la salida |
+| `long/stats-full-esp32-iot.json`, `long/stats-cli.log` | Batería completa y su registro |
+| `long/sts-finalAnalysisReport-esp32-iot.txt` | Detalle de SP 800-22 |
+| `e2e/esp32-e2e.log`, `e2e/e2e-esp32.bin`, `e2e/SHA256SUMS` | Informe de los 3 reinicios, imagen exacta y su suma de comprobación |
+
+El firmware original está respaldado localmente en
 `flash-backups/esp32-original.bin`, pero **ese archivo no se versiona**: la
 partición NVS contiene entradas de configuración Wi-Fi que podrían incluir
 credenciales.
+
+Los tiempos de cifrado de `e2e/esp32-e2e.log` no son comparables con los de las
+demás placas: el código se ejecuta desde la flash con la caché fría, de modo que
+el primer cifrado cuesta 17 veces más que los siguientes (véase `REPORT.md`, §7).
 
 ## Reproducción
 

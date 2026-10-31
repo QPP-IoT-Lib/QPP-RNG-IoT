@@ -1,4 +1,4 @@
-# Hardware-in-the-loop results: QPP-RNG on three IoT boards
+# Hardware-in-the-loop results: QPP-RNG on four IoT boards
 
 Recorded 2026-10-08 on the bench attached to this machine. Nothing here
 is committed; every number below can be regenerated with the commands in
@@ -54,6 +54,11 @@ is committed; every number below can be regenerated with the commands in
    A 128-bit key and nonce take 8.7–8.8 s on the AVRs and 0.7 s on the nRF.
    Ascon with 64 B of message takes 7.8 ms and 0.23 ms. AVR static RAM
    is 366–662 B, not the 68 B reported before (`.data` was missed).
+7. **ESP32 (§7):** the reference repeats exactly across resets here too,
+   despite the flash cache. With the on-chip RNG (ADC noise source on, 7.15
+   bits/byte), the IoT variant differs across resets, passes the full battery
+   on 1 MB (`ea_non_iid` 7.31, SP 800-22 1363/1374) at **385 B/s**, and the
+   whole stack passes end to end, with a key in about 0.2 s.
 
 ## The bench
 
@@ -62,6 +67,7 @@ is committed; every number below can be regenerated with the commands in
 | Arduino Mega 2560       | ATmega2560, 16 MHz                            | `/dev/cu.usbmodem11201`                                                              | avrdude `wiring` @115200, USART0          |
 | Arduino Nano (FT232R)   | ATmega328P (sig `1E 95 0F`, optiboot), 16 MHz | `/dev/cu.usbserial-AB0LRIQV`                                                         | avrdude `arduino` @115200, USART0         |
 | makerdiary nRF52840 MDK | nRF52840 Cortex-M4F, 64 MHz (HFXO on)         | DAPLink CMSIS-DAP + `/dev/cu.usbmodem111102`, `/dev/cu.usbmodem21102` after a replug | probe-rs; UART0 TX = P0.20 → DAPLink VCOM |
+| ESP32 (added 2026-10-30, §7) | ESP32-D0WD-V3 Xtensa LX6, 240 MHz            | CH340, `COM4` on the Windows PC                                                      | espflash; UART0 TX = GPIO1                |
 
 The original flash contents of all three boards were saved before
 anything was written: `hil-results/flash-backups/`
@@ -736,6 +742,132 @@ uv run qpp-iot/scripts/e2e-check.py --port COM7 --ascon-c ./ascon_c_driver --run
 uv run qpp-iot/scripts/e2e-check.py --port COM6 --reset break --ascon-c ./ascon_c_driver --runs 3
 ```
 
+## 7. ESP32 (2026-10-30)
+
+Board: ESP32-D0WD-V3 rev 3.1, 240 MHz, 40 MHz crystal, 4 MB flash, CH340
+USB-serial bridge on `COM4`, attached to the Windows PC. The firmware is
+`hil-firmware/esp32` (`esp-hal` 1.2.2 for startup, clocks and UART, same
+modes and record format as the other boards). It runs on core 0 with core 1
+parked and the radio off, from flash through the cache. Data:
+`hil-results/esp32/`. Original flash: `flash-backups/esp32-original.bin`,
+kept local and not versioned, because its NVS partition has Wi-Fi entries
+(`ap.ssid`, `ap.passwd`) whose values were not inspected.
+
+### Reference generator
+
+| Runs (resets) | Records/run | Identical? | Cycles/pad draw | Compute-bound output |
+|---|---|---|---|---|
+| 2 + 3 | 2,000 and 20,000 | **yes, 100%** | 448 | 256 B/s |
+
+The flash cache does not add noise: this core also repeats the trace bit for
+bit. Its output still passes Tier 1 on 4,000 B (monobit p = 0.85, runs
+p = 0.96, χ² p = 0.89), the same blind spot as §1. The resets used the EN pin
+through the bridge; power cycles were not tested.
+
+### Raw sources, 1 M samples
+
+`rawsrc` records the RTC slow clock (RC, about 156 kHz) over 256 cycles,
+counted in 40 MHz crystal cycles by timer group 0's calibration unit, and one
+RNG word with the SAR ADC noise source on. 1,000,001 records in 27.5 min,
+`bad_sync_bytes=0`, `dropped_frames=0`.
+
+| Source | `ea_non_iid` (1 M) | Binding | `ea_iid` | Credited |
+|---|---|---|---|---|
+| On-chip RNG low byte, ADC noise on | **7.15 bits/byte** (20k: 6.26) | 8 × H_bitstring (H_original 7.31, t-tuple) | **all IID tests pass**, χ² p = 0.69 / 0.75, H = 7.90 | 4 |
+| RTC slow clock low byte | **2.57 bits/sample** (20k: 2.64) | 8 × H_bitstring (H_original 4.37, Lag) | not run | unused |
+
+The RTC source has mean 65,744 crystal cycles, σ = 41, drift-free σ = 6.0 and
+lag-1 autocorrelation 0.98. Its 2.57 bits would be usable, more than the AVR
+watchdog's, at 606 samples/s (the capture rate, which also includes the RNG
+read and the UART), but the RNG is stronger on this chip. No firmware here uses it.
+
+**RNG with the ADC noise source off** (radio also off; 20,000 records, 2
+resets; Espressif documents this state as pseudo-random): it does not repeat
+across resets (0/20,000 positional word matches, 76 byte matches against 78
+expected by chance) and scores 5.82 bits/byte on `ea_non_iid`, against 6.26
+with the source on at the same size. `ea_iid` fails its χ² tests, at a size
+where §4 shows that test is unreliable. So this short run neither shows it is
+weak nor justifies using it, since it is far below 1 M samples. The firmware
+keeps the noise source on.
+
+### `qpp-rng-iot` on the board
+
+Credit 4 bits/byte → 4 samples/byte, 4 walks of N = 6 per byte.
+
+| Cross-reset | Bytes captured | Throughput | Compute | Health failures | Firmware image |
+|---|---|---|---|---|---|
+| **different**, 0/200 positional matches | 1,000,000 (43.2 min, one boot) | **385 B/s** | 622k cycles/byte in the stream (2.59 ms); 704k in the 256-byte startup benchmark | 0 | 25.4 KB (image sections) |
+
+Full battery via `stats-cli full` in WSL
+(`esp32/long/stats-full-esp32-iot.json`, `ea_{iid,non_iid}-esp32-iot-1MB.txt`,
+`sts-finalAnalysisReport-esp32-iot.txt`; no STS ABORTED):
+
+| Test | Result |
+|---|---|
+| Tier 1 | all pass: monobit p = 0.14, runs p = 0.52, χ² p = 0.16, corr. −0.00009, Shannon 7.9998 |
+| `ent` | 7.999799 bits/byte, χ² exceeded 15.81%, π error 0.20% |
+| `ea_iid` | **all IID tests pass**, χ² p = 0.33 / 0.66; H = 7.886 |
+| `ea_non_iid` | **7.307 bits/byte** (H_original 7.354; binding 8 × H_bitstring) |
+| SP 800-22 (8 streams × 1 Mbit) | 1363 / 1374 (99.20%) |
+
+SP 800-22: 9 NonOverlappingTemplate rows at 7/8, RandomExcursions and
+RandomExcursionsVariant one row each at 2/3 (only 3 of 8 streams have enough
+cycles for them). That is 11 failures against about 14 expected by chance at
+α = 0.01. As on the other boards, the output estimate can't confirm 8
+bits/byte; the claim rests on the raw-source assessment (≥ 28.6 assessed bits
+per byte, 16 credited) and the health tests.
+
+### End to end
+
+`qpp-iot/firmware/e2e` on the board, 3 resets (`esp32/e2e/esp32-e2e.log`,
+image `e2e-esp32.bin`, `SHA256SUMS`): **PASS**. 9/9 ciphertexts and tags match
+ascon-c 446347f, 9/9 decrypt, 9/9 tampered messages rejected, and key and nonce
+differ on every reset.
+
+| Measure | Result |
+|---|---|
+| Key generation (first 32 conditioned bytes) | 167–205 ms (40–49 M cycles) |
+| Nonce / cipher setup | 2,096 cycles (8.7 µs) / 1,161 cycles (4.8 µs) |
+| Encrypt 0 / 16 / 64 B (+16 B AD) | 281.7k / 16.4k / 16.1k cycles = 1.17 / 0.068 / 0.067 ms |
+| Decrypt 0 / 16 / 64 B | 28.4k / 16.9k / 16.7k cycles |
+| Image sections / static RAM | 49.9 KB / 1,444 B (`.data` 1,320 + `.bss` 124), plus 5.2 KB of code in IRAM |
+| Peak stack | 1,180 B |
+
+**These cipher timings are not comparable with §6, and no per-byte cost can
+be taken from them.** The code runs from flash through a cold cache: the same
+order of messages gives the same cycle counts on every reset, the first
+encryption costs 17× the later ones, and 64 B costs less than 16 B. The
+firmware does not measure a warm repeat, so the 64 B figures are the closest
+thing to steady state here.
+
+### Things that went wrong
+
+- **A byte can be lost on this serial link.** A 20,000-record capture lost one
+  byte at record 14,492, which shifted one record into the data. No other board
+  has shown this. That capture was discarded and redone. `capture.py` now
+  accepts a record only if the next record's sync byte follows it and counts
+  rejects as `dropped_frames` in the `.meta`. The 1 M and 1 MB captures ran
+  under this check, with 0 rejected.
+- **First jitter captures were invalid**, with values repeated in pairs:
+  the calibration RDY flag was still set from the previous run. They were
+  discarded; the firmware now waits for RDY to clear first.
+- **`stats-cli` reports `overall_pass=true` when SP 800-22 didn't run.** In a
+  shell without `assess` on `PATH`, `sp800_22` came back empty with that verdict.
+  The battery was rerun with STS on `PATH`. `exit_success` is `false` on all
+  four boards' SP 800-22 results, so only `parsed` shows that it ran.
+
+Provenance: branches `adrian/esp32-hil` (qpp-rng) and `adrian/esp32-e2e`
+(qpp-iot), ascon faf4331. Toolchain: espup 0.19.0, Xtensa Rust 1.97.0.0
+(`--ignore-rust-version`, as the workspace asks for 1.97.1),
+xtensa-esp-elf-gcc 16.1.0, espflash 4.7.0. On the qpp-iot branch, the rebuilt
+Nano and Mega e2e images are byte-identical to `hil-results/e2e/`, and the nRF
+image builds but was not compared or rerun. The board now holds the e2e
+firmware. To restore it:
+
+```bash
+esptool --port COM4 --baud 460800 write-flash 0 hil-results/flash-backups/esp32-original.bin
+```
+
 ## Open items
 
 1. **USB reliability.** The nRF's DAPLink dropped off USB HID three
@@ -814,4 +946,6 @@ is required).
 | `hil-results/flash-backups/`                  | original board firmware                                                                       |
 | `hil-results/pi4/`                            | §5: Pi 4 reference traces (`ref-{a,b,c}.bin`), 1 MB output, Δt-vs-mode residual streams (Pi, Windows), `ea_non_iid` outputs, full-battery JSON, test summary |
 | `crates/qpp-rng-firmware/examples/pi_trace.rs` | §5: per-cycle `(n_p, Δt)` trace of the reference on any host, HIL record format              |
+| `hil-results/esp32/`                          | §7: all ESP32 captures, samples, assessments and end-to-end report                            |
+| `hil-firmware/esp32/`                         | §7: ESP32 firmware, own Cargo workspace                                                       |
 | `hil-results/e2e/`                            | §6: end-to-end reports (`nano-e2e.log`, `mega2560-e2e.log`, `nrf52840-e2e.log`) and the exact images run (`SHA256SUMS`) |

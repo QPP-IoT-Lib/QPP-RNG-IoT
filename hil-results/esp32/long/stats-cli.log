@@ -1,0 +1,3 @@
+running Tier 1 + Tier 2 for esp32-iot-1MB...
+  tier1 pass=true min_entropy=Some(7.30732) overall_pass=true
+wrote 1 candidate report(s) to /mnt/c/AdrianDevelopment/2026-20/Thesis/qpp-rng-lib/qpp-rng/hil-results/esp32/long/stats-full-esp32-iot.json
